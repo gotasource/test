@@ -51,6 +51,8 @@ function initApp(){
     });
     return app;
 }
+
+
 export function GotaBoot(appClass: Function) {
     let gotaAppMetadata  = Reflect.getMetadata(DESIGN_META_DATA.APP, appClass);
     let serviceClasses = gotaAppMetadata.scanner;

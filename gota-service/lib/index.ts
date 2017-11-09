@@ -4,8 +4,10 @@ import "reflect-metadata";
 
 const DESIGN_META_DATA = {
     SERVICE : 'design:meta:data:key:service',
+    SERVICE_MAPPING : 'design:meta:data:key:service:mapping',
     PATH : 'design:meta:data:key:path',
     METHOD : 'design:meta:data:key:method',
+    PARAMETER : 'design:meta:data:key:parameter',
     PATH_PARAMETER : 'design:meta:data:key:path:parameter',
     REQUEST : 'design:meta:data:key:request',
     RESPONSE : 'design:meta:data:key:response',
@@ -31,14 +33,48 @@ export class RequestMethod{
     static  PATCH  = 'patch';
     static  DELETE = 'delete';
 }
-export function Path(path:string | Array<string>) {
-	return function(...args : any[]): void {
-		Reflect.defineMetadata(DESIGN_META_DATA.PATH, path, ...args);
+
+//https://davidwalsh.name/javascript-arguments
+function getArguments(func:Function): Array<string> {
+    let functionName = 'function '+func.toString();
+    // First match everything inside the function argument parens.
+    var args = ('function '+ functionName).match(/function\s.*?\(([^)]*)\)/)[1];
+
+    // Split the arguments string into an array comma delimited.
+    return args.split(',').map(function(arg) {
+        // Ensure no inline comments are parsed and trim the whitespace.
+        return arg.replace(/\/\*.*\*\//, '').trim();
+    }).filter(function(arg) {
+        // Ensure no undefined values are added.
+        return arg;
+    });
+}
+
+export function Service(mapping:{ path:string | Array<string>}) {
+	return function(... args : any[]): void {
+        let serviceWrapper: Object = {
+            path: mapping.path
+        };
+	    Reflect.defineMetadata(DESIGN_META_DATA.SERVICE, serviceWrapper, args[0]);
 	}
 }
 
-export function Method(method:string | Array<string>) {
-    return Reflect.metadata(DESIGN_META_DATA.METHOD, method);
+export function ServiceMapping(mapping:{path : string | Array<string>, requestMethod?: string | Array<string>} ) {
+    return function(... args : any[]): void {
+        let typeInfo = Reflect.getMetadata("design:typeinfo", args[0], args[1]);
+        let functionWrapper: Object = {
+            path: mapping.path,
+            requestMethod: mapping.requestMethod,
+            returnType:typeInfo.returnType,
+            awaitedType: typeInfo.awaitedType
+        };
+        Reflect.defineMetadata(DESIGN_META_DATA.SERVICE, functionWrapper, args[0], args[1]);
+    }
+
+
+
+
+    //return Reflect.metadata(DESIGN_META_DATA.SERVICE_MAPPING, functionWrapper);
 }
 
 //https://blogs.msdn.microsoft.com/typescript/2015/04/30/announcing-typescript-1-5-beta/
@@ -46,10 +82,18 @@ export function Method(method:string | Array<string>) {
 //https://www.typescriptlang.org/docs/handbook/decorators.html#metadata
 //http://blog.wolksoftware.com/decorators-metadata-reflection-in-typescript-from-novice-to-expert-part-4
 
-function Parameter(designParameter: string, targetClass: Object, methodName: string | symbol, index: number) {
-    let indexes: number[] = Reflect.getOwnMetadata(designParameter, targetClass, methodName) || [];
-    indexes.push(index);
-    Reflect.defineMetadata(designParameter, indexes, targetClass, methodName);
+function Parameter(designMetaData: string, targetClass: any, methodName: string | symbol, index: number) {
+    let paramType: string = Reflect.getMetadata("design:typeinfo", targetClass, methodName).paramTypes[index];
+    let method: Function = targetClass[methodName];
+    let paramName:string = getArguments(method)[index];
+    let parameterWrapper: Object = {
+        designMetaData: designMetaData,
+        name: paramName,
+        type: paramType
+    };
+    let parameterWrappers: Array<Object> = Reflect.getOwnMetadata(DESIGN_META_DATA.PARAMETER, targetClass, methodName) || [];
+    parameterWrappers[index] = parameterWrapper;
+    Reflect.defineMetadata(DESIGN_META_DATA.PARAMETER, parameterWrappers, targetClass, methodName);
 }
 
 export function PathParameter(target: Object, name: string | symbol, index: number) {

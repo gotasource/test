@@ -23,14 +23,14 @@ export class Hello{
     }
 
     @Method(RequestMethod.GET)
-    @Path('/hello')
+    @Path('/hi')
     readCategory(@QueryParameter lastName:string, @QueryParameter firstName:string): User{
         let user = new User(firstName, lastName);
         return user;
     }
 
     @Method(RequestMethod.GET)
-    @Path('/hello1')
+    @Path('/bye')
     async readCategory1(@QueryParameter lastName:string, @QueryParameter firstName:string):Promise<User>{
         return await sleep(this.readCategory, [lastName, firstName]);
     }

@@ -6,8 +6,10 @@ import {accessSync} from "fs";
 
 const DESIGN_META_DATA = {
     SERVICE : 'design:meta:data:key:service',
+    SERVICE_MAPPING : 'design:meta:data:key:service:mapping',
     PATH : 'design:meta:data:key:path',
     METHOD : 'design:meta:data:key:method',
+    PARAMETER : 'design:meta:data:key:parameter',
     PATH_PARAMETER : 'design:meta:data:key:path:parameter',
     REQUEST : 'design:meta:data:key:request',
     RESPONSE : 'design:meta:data:key:response',
@@ -41,128 +43,173 @@ function getArguments(func:Function) {
         // Ensure no undefined values are added.
         return arg;
     });
-
 }
-export default class Booter<T> {
-    public static allServices = [];
-    protected service:T;
-    protected app: any = express();
-    constructor(service:T){
-        //(c: {new(): T; })
-        this.service = service;
-        // parse application/x-www-form-urlencoded
-        this.app.use(bodyParser.urlencoded({ extended: false }));
-        // parse application/json
-        this.app.use(bodyParser.json());
-        this.app.use(compression());
-        let serviceClass = this.service.constructor;
-        let servicePath = Reflect.getMetadata(DESIGN_META_DATA.PATH, serviceClass);
-        Object.getOwnPropertyNames(serviceClass.prototype).forEach(methodName=>{
-            if(methodName !== 'constructor'){
-                let designMethod = Reflect.getMetadata(DESIGN_META_DATA.METHOD, this.service, methodName) || REQUEST_METHOD.GET;
-                let designPath = Reflect.getMetadata(DESIGN_META_DATA.PATH, this.service, methodName);
-                if(typeof designPath === 'string'){
-                    designPath = [designPath];
-                }
-                designPath.forEach(path => {
-                    this.app[designMethod](servicePath+path,(request: any, response: any)=> {
-                        let method: Function = this.service[methodName];
-                        let args = getArguments(method);
-                        if(Array.isArray(args) && args.length>0){
-                            let pathParameterIndexes = Reflect.getOwnMetadata(DESIGN_META_DATA.PATH_PARAMETER, serviceClass.prototype,  methodName) || [];
-                            pathParameterIndexes.forEach(index=>{
-                                args[index] = request.params[args[index]];
-                            })
-                            //query
-                            let queryIndexes = Reflect.getOwnMetadata(DESIGN_META_DATA.QUERY, serviceClass.prototype,  methodName) || [];
-                            queryIndexes.forEach(index=>{
-                                args[index] = request.query;
-                            })
-                            let queryParameterIndexes = Reflect.getOwnMetadata(DESIGN_META_DATA.QUERY_PARAMETER, serviceClass.prototype,  methodName) || [];
-                            queryParameterIndexes.forEach(index=>{
-                                args[index] = request.query[args[index]];
-                            })
-                            //body
-                            let bodyIndexes = Reflect.getOwnMetadata(DESIGN_META_DATA.BODY, serviceClass.prototype,  methodName) || [];
-                            bodyIndexes.forEach(index=>{
-                                args[index] = request.body;
-                            })
-                            let bodyParameterIndexes = Reflect.getOwnMetadata(DESIGN_META_DATA.BODY_PARAMETER, serviceClass.prototype,  methodName) || [];
-                            bodyParameterIndexes.forEach(index=>{
-                                args[index] = request.body[args[index]];
-                            })
-                            //headers
-                            let headersIndexes = Reflect.getOwnMetadata(DESIGN_META_DATA.HEADERS, serviceClass.prototype,  methodName) || [];
-                            headersIndexes.forEach(index=>{
-                                args[index] = request.headers;
-                            })
-                            let headersParameterIndexes = Reflect.getOwnMetadata(DESIGN_META_DATA.HEADERS_PARAMETER, serviceClass.prototype,  methodName) || [];
-                            headersParameterIndexes.forEach(index => {
-                                let argLowerCase = args[index].replace(/[A-Z]/g, (match, offset, string)=> {
-                                    return (offset ? '-' : '') + match.toLowerCase();
-                                })
-                                args[index] = request.headers[args[index]] || request.headers[argLowerCase];
-                            })
-                            //request
-                            let requestIndexes = Reflect.getOwnMetadata(DESIGN_META_DATA.REQUEST, serviceClass.prototype,  methodName) || [];
-                            requestIndexes.forEach(index=>{
-                                args[index] = request;
-                            })
 
-                            //response
-                            let responseIndexes = Reflect.getOwnMetadata(DESIGN_META_DATA.RESPONSE, serviceClass.prototype,  methodName) || [];
-                            responseIndexes.forEach(index=>{
-                                args[index] = response;
-                            })
-                        }
-						
-                        var returnType = Reflect.getMetadata("design:typeinfo", this.service, methodName).returnType;
-                        if(returnType instanceof Function && returnType().name ==='Promise'){
-                            method.apply(this.service, args).then(result =>{
+export interface ParameterWrapper{
+    designMetaData: string,//Query, Path, Body
+    name: string,
+    type: any,
+    value?:any
+}
+
+export class FunctionWrapper{
+    function: Function;
+    requestMethod: string | Array<string>
+    path: string | Array<string>
+    parameterWrappers: Array<ParameterWrapper>;
+    returnType: any;
+    awaitedType?: any;
+}
+
+export interface ServiceWrapper{
+    service: any;
+    path: string | Array<string>;
+    functionWrappers: Array<FunctionWrapper>;
+}
+
+export default class Booter {
+    public static buildServiceWrapper(service: any): ServiceWrapper {
+        let serviceClass = service.constructor;
+        let serviceMetaData = Reflect.getMetadata(DESIGN_META_DATA.SERVICE, serviceClass);
+        let functionWrappers = this.buildMethodWrappers(service);
+        let serviceWrapper: ServiceWrapper = {
+            service: service,
+            path: serviceMetaData.path,
+            functionWrappers: functionWrappers
+        };
+        return serviceWrapper;
+    }
+
+    private static buildMethodWrappers(service: any): Array<FunctionWrapper>{
+        let methodWrappers: Array<FunctionWrapper> = [];
+        Object.getOwnPropertyNames(service.constructor.prototype).forEach(methodName=> {
+            if (methodName !== 'constructor') {
+                let methodWrapper = this.buildMethodWrapper(service, methodName);
+                methodWrappers.push()
+            }
+        });
+        return methodWrappers;
+    }
+
+    private static buildMethodWrapper(service: any, methodName:string): FunctionWrapper{
+        let _function: Function = service[methodName];
+        let methodMetaData = Reflect.getMetadata(DESIGN_META_DATA.SERVICE_MAPPING, service, methodName);
+        let parameterWrappers: Array<ParameterWrapper> = this.buildParameterWrappers(service, methodName);
+
+        let functionWrapper: FunctionWrapper = {
+            function: _function,
+            requestMethod: methodMetaData.requestMethod || REQUEST_METHOD.GET,
+            path: methodMetaData.path,
+            returnType:methodMetaData.returnType,
+            awaitedType: methodMetaData.awaitedType,
+            parameterWrappers: parameterWrappers
+        }
+        return functionWrapper;
+    }
+
+    private static buildParameterWrappers(service: any, methodName:string): Array<ParameterWrapper>{
+        let parameterWrappers: Array<ParameterWrapper> =[];
+        let parameterMetaData = Reflect.getOwnMetadata(DESIGN_META_DATA.PARAMETER, service,  methodName);
+        if(Array.isArray(parameterMetaData)) {
+            parameterMetaData.forEach(parameterItem=>{
+                let parameterWrapper: ParameterWrapper = {
+                    designMetaData: parameterItem.designMetaData,
+                    name: parameterItem.name,
+                    type: parameterItem.type
+                }
+                parameterWrappers.push(parameterWrapper)
+            });
+        }
+        return parameterWrappers;
+    }
+
+    private static parseArguments(parameterWrappers: Array<ParameterWrapper>, request: any, response: any): Array<ParameterWrapper> {
+        if (Array.isArray(parameterWrappers) && parameterWrappers.length > 0) {
+            parameterWrappers.forEach(parameterWrapper => {
+                let designMetaData = parameterWrapper.designMetaData;
+                let parameterName = parameterWrapper.name;
+                switch (designMetaData) {
+                    case DESIGN_META_DATA.PATH_PARAMETER:
+                        parameterWrapper.value = request.params[parameterName];
+                        break;
+                    case DESIGN_META_DATA.QUERY:
+                        parameterWrapper.value = request.query;
+                        break;
+                    case DESIGN_META_DATA.QUERY_PARAMETER:
+                        parameterWrapper.value = request.query[parameterName];
+                        break;
+                    case DESIGN_META_DATA.BODY:
+                        parameterWrapper.value = request.body;
+                        ;
+                        break;
+                    case DESIGN_META_DATA.BODY_PARAMETER:
+                        parameterWrapper.value = request.body[parameterName];
+                        break;
+                    case DESIGN_META_DATA.HEADERS:
+                        parameterWrapper.value = request.headers
+                        break;
+                    case DESIGN_META_DATA.HEADERS_PARAMETER:
+                        let argLowerCase = parameterName.replace(/[A-Z]/g, (match, offset, string) => {
+                            return (offset ? '-' : '') + match.toLowerCase();
+                        })
+                        parameterWrapper.value = request.headers[parameterName] || request.headers[argLowerCase];
+                        break;
+                    case DESIGN_META_DATA.REQUEST:
+                        parameterWrapper.value = request;
+                        break;
+                    case DESIGN_META_DATA.RESPONSE:
+                        parameterWrapper.value = response;
+                    default:
+                        break;
+                }
+            });
+            return parameterWrappers;
+        }
+
+    }
+    public static boot(expressApp: any, serviceWrapper: ServiceWrapper): void{
+
+        let servicePaths = serviceWrapper.path;
+        if(typeof servicePaths === 'string'){
+            servicePaths = [servicePaths];
+        }
+        let functionWrappers = serviceWrapper.functionWrappers;
+        servicePaths.forEach(servicePath => {
+            functionWrappers.forEach(functionWrapper => {
+                let requestMethods = functionWrapper.requestMethod;
+                if(typeof requestMethods === 'string'){
+                    requestMethods = [requestMethods];
+                }
+                requestMethods.forEach(requestMethod=>{
+                    let functionPaths = functionWrapper.path;
+                    if(typeof functionPaths === 'string'){
+                        functionPaths = [functionPaths];
+                    }
+                    functionPaths.forEach(functionPath =>{
+                        let path = servicePath + functionPath;
+                        expressApp[requestMethod](path, (request: any, response: any)=> {
+                            let _arguments: Array<ParameterWrapper> = this.parseArguments(functionWrapper.parameterWrappers, request, response);
+                            _arguments = _arguments.map(arg => arg.value);
+                            let func = functionWrapper.function;
+                            let service = serviceWrapper.service;
+                            if(functionWrapper.awaitedType){
+                                func.apply(service, _arguments).then(result =>{
+                                    if(result && !isNaN(result)){
+                                        result = result.toString();
+                                    }
+                                    response.status(200).send(result);
+                                });
+                            }else{
+                                let result = func.apply(service, _arguments);
                                 if(result && !isNaN(result)){
                                     result = result.toString();
                                 }
                                 response.status(200).send(result);
-                            });
-                        }else{
-                            let result = method.apply(this.service, args);
-                            if(result && !isNaN(result)){
-                                result = result.toString();
                             }
-                            response.status(200).send(result);
-                        }
-
-
-                    });
+                        });
+                    })
                 })
-
-            }
+            });
         })
-
-        //if(config.dev){
-        if(true){
-            let data:Array<any> = [];
-            Object.getOwnPropertyNames(serviceClass.prototype).forEach(methodName=> {
-                if (methodName !== 'constructor') {
-                    let designMethod = Reflect.getMetadata(DESIGN_META_DATA.METHOD, this.service, methodName) || REQUEST_METHOD.GET;
-                    let designPath = Reflect.getMetadata(DESIGN_META_DATA.PATH, this.service, methodName);
-                    let item = {
-                        method:designMethod,
-                        urls: Array.isArray(designPath)?designPath.map(i=>{return servicePath+i}):undefined,
-                        url: Array.isArray(designPath)?undefined:servicePath+designPath,
-                    }
-                    data.push(item);
-                }
-            })
-
-            this.app.get(servicePath,(request, response)=> {
-                response.send(data);
-            })
-        }
-
-    }
-
-    public getApp(){
-        return  this.app;
     }
 }
