@@ -1,5 +1,5 @@
-import {GotaApp, GotaBoot} from "gota-boot";
 import {Hello} from "./service/Hello";
+import {GotaApp, GotaBoot} from "./gota-boot/index";
 
 @GotaApp({
     scanner: [Hello],

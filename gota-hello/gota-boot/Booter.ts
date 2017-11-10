@@ -3,6 +3,7 @@ import * as bodyParser from 'body-parser';
 import * as  compression from 'compression';
 import "reflect-metadata";
 import {accessSync} from "fs";
+import Helper from "../gota-helper/index";
 
 const DESIGN_META_DATA = {
     SERVICE : 'design:meta:data:key:service',
@@ -29,22 +30,6 @@ const REQUEST_METHOD = {
     DELETE : 'delete'
 };
 
-//https://davidwalsh.name/javascript-arguments
-function getArguments(func:Function) {
-    let functionName = func.toString();
-    // First match everything inside the function argument parens.
-    var args = ('function '+ functionName).match(/function\s.*?\(([^)]*)\)/)[1];
-
-    // Split the arguments string into an array comma delimited.
-    return args.split(',').map(function(arg) {
-        // Ensure no inline comments are parsed and trim the whitespace.
-        return arg.replace(/\/\*.*\*\//, '').trim();
-    }).filter(function(arg) {
-        // Ensure no undefined values are added.
-        return arg;
-    });
-}
-
 export interface ParameterWrapper{
     designMetaData: string,//Query, Path, Body
     name: string,
@@ -52,7 +37,7 @@ export interface ParameterWrapper{
     value?:any
 }
 
-export class FunctionWrapper{
+export interface FunctionWrapper{
     function: Function;
     requestMethod: string | Array<string>
     path: string | Array<string>
@@ -65,6 +50,16 @@ export interface ServiceWrapper{
     service: any;
     path: string | Array<string>;
     functionWrappers: Array<FunctionWrapper>;
+}
+
+interface ServiceInformation{
+    requestMethod:string;
+    path:string;
+    returnType: Function;
+    awaitedType?: Function;
+    requestInformation: Array<ParameterWrapper>;
+    service: Object;
+    function: Function;
 }
 
 export default class Booter {
@@ -109,7 +104,7 @@ export default class Booter {
 
     private static buildParameterWrappers(service: any, methodName:string): Array<ParameterWrapper>{
         let parameterWrappers: Array<ParameterWrapper> =[];
-        let parameterMetaData = Reflect.getOwnMetadata(DESIGN_META_DATA.PARAMETER, service,  methodName);
+        let parameterMetaData = Reflect.getMetadata(DESIGN_META_DATA.PARAMETER, service,  methodName);
         if(Array.isArray(parameterMetaData)) {
             parameterMetaData.forEach(parameterItem=>{
                 let parameterWrapper: ParameterWrapper = {
@@ -123,93 +118,119 @@ export default class Booter {
         return parameterWrappers;
     }
 
-    private static parseArguments(parameterWrappers: Array<ParameterWrapper>, request: any, response: any): Array<ParameterWrapper> {
+    private static getArguments(request: any, response: any, parameterWrappers: Array<ParameterWrapper>,): Array<any> {
+        let _arguments:Array<any> = []
         if (Array.isArray(parameterWrappers) && parameterWrappers.length > 0) {
             parameterWrappers.forEach(parameterWrapper => {
                 let designMetaData = parameterWrapper.designMetaData;
                 let parameterName = parameterWrapper.name;
                 switch (designMetaData) {
                     case DESIGN_META_DATA.PATH_PARAMETER:
-                        parameterWrapper.value = request.params[parameterName];
+                        _arguments.push(request.params[parameterName]);
                         break;
                     case DESIGN_META_DATA.QUERY:
-                        parameterWrapper.value = request.query;
+                        _arguments.push(request.query);
                         break;
                     case DESIGN_META_DATA.QUERY_PARAMETER:
-                        parameterWrapper.value = request.query[parameterName];
+                        _arguments.push(request.query[parameterName]);
                         break;
                     case DESIGN_META_DATA.BODY:
-                        parameterWrapper.value = request.body;
-                        ;
+                        _arguments.push(request.body);
                         break;
                     case DESIGN_META_DATA.BODY_PARAMETER:
-                        parameterWrapper.value = request.body[parameterName];
+                        _arguments.push(request.body[parameterName]);
                         break;
                     case DESIGN_META_DATA.HEADERS:
-                        parameterWrapper.value = request.headers
+                        _arguments.push(request.headers);
                         break;
                     case DESIGN_META_DATA.HEADERS_PARAMETER:
                         let argLowerCase = parameterName.replace(/[A-Z]/g, (match, offset, string) => {
                             return (offset ? '-' : '') + match.toLowerCase();
-                        })
-                        parameterWrapper.value = request.headers[parameterName] || request.headers[argLowerCase];
+                        });
+                        _arguments.push(request.headers[parameterName] || request.headers[argLowerCase]);
                         break;
                     case DESIGN_META_DATA.REQUEST:
-                        parameterWrapper.value = request;
+                        _arguments.push(request);
                         break;
                     case DESIGN_META_DATA.RESPONSE:
-                        parameterWrapper.value = response;
+                        _arguments.push(response);
                     default:
                         break;
                 }
             });
-            return parameterWrappers;
         }
-
+        return _arguments;
     }
-    public static boot(expressApp: any, serviceWrapper: ServiceWrapper): void{
+
+    public static collectServiceInformation(serviceWrapper: ServiceWrapper, functionWrapper: FunctionWrapper): Array<ServiceInformation>{
+        let serviceInformationList: Array<ServiceInformation> = [];
 
         let servicePaths = serviceWrapper.path;
         if(typeof servicePaths === 'string'){
-            servicePaths = [servicePaths];
+            servicePaths = [servicePaths.toString()];
         }
         let functionWrappers = serviceWrapper.functionWrappers;
         servicePaths.forEach(servicePath => {
             functionWrappers.forEach(functionWrapper => {
                 let requestMethods = functionWrapper.requestMethod;
                 if(typeof requestMethods === 'string'){
-                    requestMethods = [requestMethods];
+                    requestMethods = [requestMethods.toString()];
                 }
                 requestMethods.forEach(requestMethod=>{
                     let functionPaths = functionWrapper.path;
                     if(typeof functionPaths === 'string'){
-                        functionPaths = [functionPaths];
+                        functionPaths = [functionPaths.toString()];
                     }
                     functionPaths.forEach(functionPath =>{
                         let path = servicePath + functionPath;
-                        expressApp[requestMethod](path, (request: any, response: any)=> {
-                            let _arguments: Array<ParameterWrapper> = this.parseArguments(functionWrapper.parameterWrappers, request, response);
-                            _arguments = _arguments.map(arg => arg.value);
-                            let func = functionWrapper.function;
-                            let service = serviceWrapper.service;
-                            if(functionWrapper.awaitedType){
-                                func.apply(service, _arguments).then(result =>{
-                                    if(result && !isNaN(result)){
-                                        result = result.toString();
-                                    }
-                                    response.status(200).send(result);
-                                });
-                            }else{
-                                let result = func.apply(service, _arguments);
-                                if(result && !isNaN(result)){
-                                    result = result.toString();
-                                }
-                                response.status(200).send(result);
-                            }
-                        });
+                        let serviceInformation: ServiceInformation = {
+                            path:path,
+                            requestMethod:requestMethod,
+                            service: serviceWrapper.service,
+                            function: functionWrapper.function,
+                            returnType: functionWrapper.returnType,
+                            awaitedType: functionWrapper.awaitedType,
+                            requestInformation: functionWrapper.parameterWrappers
+                        }
+                        serviceInformationList.push(serviceInformation)
                     })
                 })
             });
+        })
+        return serviceInformationList;
+    }
+
+    public static bootAService(expressApplication: any, serviceInformation: ServiceInformation){
+        let app = expressApplication;
+        let path: string = serviceInformation.path;
+        let requestMethod: string = serviceInformation.requestMethod ;
+        let _function = serviceInformation.function;
+        let service = serviceInformation.service;
+        serviceInformation
+        app[requestMethod](path, (req, res) => {
+            let _arguments = this.getArguments(req, res, serviceInformation.requestInformation);
+
+            if(serviceInformation.awaitedType){
+                let promise: Promise<any> = _function.apply(service, _arguments);
+                promise.then(result => {
+                    if(result && !isNaN(result)){
+                        result = result.toString();
+                    }
+                    res.status(200).send(result);
+                });
+            }else{
+                let result = _function.apply(service, _arguments);
+                if(result && !isNaN(result)){
+                    result = result.toString();
+                }
+                res.status(200).send(result);
+            }
+        })
+    }
+
+    public static boot(expressApplication: any, serviceInformationList: Array<ServiceInformation>){
+        serviceInformationList.forEach(serviceInformation =>{
+            this.bootAService(expressApplication, serviceInformation);
         })
     }
 }

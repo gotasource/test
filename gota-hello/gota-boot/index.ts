@@ -55,7 +55,7 @@ function initApp(){
 
 export function GotaBoot(appClass: Function) {
     let gotaAppMetadata  = Reflect.getMetadata(DESIGN_META_DATA.APP, appClass);
-    let serviceClasses = gotaAppMetadata.scanner;
+    let serviceClasses: Array<any> = gotaAppMetadata.scanner;
     let config = gotaAppMetadata.config;
     if(!serviceClasses){
         throw new Error('Please make sure "scanner" in "@GotaApp" Metadata of "'+appClass.name+'" is not empty.');
@@ -67,8 +67,7 @@ export function GotaBoot(appClass: Function) {
     let app = initApp();
 
     serviceClasses.forEach(serviceClasse => {
-        let childApp = new Booter(new serviceClasse());
-        app.use(childApp.getApp());
+        let childApp = Booter.buildServiceWrapper(new serviceClasse());
     })
 
     app.listen(config.port, function () {

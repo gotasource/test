@@ -10,8 +10,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@types/compression": "0.0.34",
-    "gota-boot": "0.0.1"
+    "@types/compression": "0.0.34"
   },
   "devDependencies": {
     "typescript": "^2.5.2"

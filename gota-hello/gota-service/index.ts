@@ -1,6 +1,7 @@
 
 //https://rbuckton.github.io/reflect-metadata/#syntax
 import "reflect-metadata";
+import Helper from "../gota-helper/index";
 
 const DESIGN_META_DATA = {
     SERVICE : 'design:meta:data:key:service',
@@ -34,22 +35,6 @@ export class RequestMethod{
     static  DELETE = 'delete';
 }
 
-//https://davidwalsh.name/javascript-arguments
-function getArguments(func:Function): Array<string> {
-    let functionName = 'function '+func.toString();
-    // First match everything inside the function argument parens.
-    var args = ('function '+ functionName).match(/function\s.*?\(([^)]*)\)/)[1];
-
-    // Split the arguments string into an array comma delimited.
-    return args.split(',').map(function(arg) {
-        // Ensure no inline comments are parsed and trim the whitespace.
-        return arg.replace(/\/\*.*\*\//, '').trim();
-    }).filter(function(arg) {
-        // Ensure no undefined values are added.
-        return arg;
-    });
-}
-
 export function Service(mapping:{ path:string | Array<string>}) {
 	return function(... args : any[]): void {
         let serviceWrapper: Object = {
@@ -68,7 +53,7 @@ export function ServiceMapping(mapping:{path : string | Array<string>, requestMe
             returnType:typeInfo.returnType,
             awaitedType: typeInfo.awaitedType
         };
-        Reflect.defineMetadata(DESIGN_META_DATA.SERVICE, functionWrapper, args[0], args[1]);
+        Reflect.defineMetadata(DESIGN_META_DATA.SERVICE_MAPPING, functionWrapper, args[0], args[1]);
     }
 
 
@@ -85,7 +70,7 @@ export function ServiceMapping(mapping:{path : string | Array<string>, requestMe
 function Parameter(designMetaData: string, targetClass: any, methodName: string | symbol, index: number) {
     let paramType: string = Reflect.getMetadata("design:typeinfo", targetClass, methodName).paramTypes[index];
     let method: Function = targetClass[methodName];
-    let paramName:string = getArguments(method)[index];
+    let paramName:string = Helper.getArguments(method)[index];
     let parameterWrapper: Object = {
         designMetaData: designMetaData,
         name: paramName,
@@ -109,7 +94,7 @@ export function Query(target: Object, name: string | symbol, index: number) {
     Parameter(DESIGN_META_DATA.QUERY, target, name, index);
 }
 
-export function QueryParameter(target: Object, name: string | symbol, index: number) {
+export function QueryParameter(target: any, name: string | symbol, index: number) {
     Parameter(DESIGN_META_DATA.QUERY_PARAMETER, target, name, index);
 }
 
