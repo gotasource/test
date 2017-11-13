@@ -24,13 +24,13 @@ export class Hello{
     constructor(){
     }
 
-    @ServiceMapping({path:'./hi'})
+    @ServiceMapping({path:['/hi','/hii']})
     readCategory(@QueryParameter lastName:string, @QueryParameter firstName:string): User{
         let user = new User(firstName, lastName);
         return user;
     }
 
-    @ServiceMapping({requestMethod:RequestMethod.GET, path: '/bye'})
+    @ServiceMapping({requestMethod:[RequestMethod.GET,RequestMethod.PUT], path: '/bye'})
     async readCategory1(@QueryParameter lastName:string, @QueryParameter firstName:string):Promise<User>{
         return await sleep(this.readCategory, [lastName, firstName]);
     }

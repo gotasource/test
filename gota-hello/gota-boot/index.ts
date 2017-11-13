@@ -28,7 +28,7 @@ const REQUEST_METHOD = {
     DELETE : 'delete'
 };
 
-export function GotaApp(obj:{scanner:Array<Function>,config:object}) {
+export function GotaApp(obj:{name?: string, scanner:Array<Function>, config:object}) {
     return Reflect.metadata(DESIGN_META_DATA.APP, obj);
 }
 
@@ -66,11 +66,10 @@ export function GotaBoot(appClass: Function) {
 
     let app = initApp();
 
-    serviceClasses.forEach(serviceClasse => {
-        let childApp = Booter.buildServiceWrapper(new serviceClasse());
+    serviceClasses.forEach(serviceClass => {
+        Booter.bootService(app, config, new serviceClass());
+        app.listen(config.port, function () {
+            console.log('>> %s app is listening at %s <<',gotaAppMetadata.name , config.port);
+        });
     })
-
-    app.listen(config.port, function () {
-        console.log(appClass.name + ' listening at %s', config.port);
-    });
 }

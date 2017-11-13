@@ -35,16 +35,21 @@ export class RequestMethod{
     static  DELETE = 'delete';
 }
 
-export function Service(mapping:{ path:string | Array<string>}) {
+export function Service(mapping:{ name?: string, path: string | Array<string>}) {
 	return function(... args : any[]): void {
+	    let serviceName = mapping.name;
+	    if(!serviceName){
+            serviceName = args[0].name;
+        }
         let serviceWrapper: Object = {
+	        name: serviceName,
             path: mapping.path
         };
 	    Reflect.defineMetadata(DESIGN_META_DATA.SERVICE, serviceWrapper, args[0]);
 	}
 }
 
-export function ServiceMapping(mapping:{path : string | Array<string>, requestMethod?: string | Array<string>} ) {
+export function ServiceMapping(mapping:{name?: string, path : string | Array<string>, requestMethod?: string | Array<string>} ) {
     return function(... args : any[]): void {
         let typeInfo = Reflect.getMetadata("design:typeinfo", args[0], args[1]);
         let functionWrapper: Object = {
@@ -68,7 +73,7 @@ export function ServiceMapping(mapping:{path : string | Array<string>, requestMe
 //http://blog.wolksoftware.com/decorators-metadata-reflection-in-typescript-from-novice-to-expert-part-4
 
 function Parameter(designMetaData: string, targetClass: any, methodName: string | symbol, index: number) {
-    let paramType: string = Reflect.getMetadata("design:typeinfo", targetClass, methodName).paramTypes[index];
+    let paramType: string = Reflect.getMetadata("design:typeinfo", targetClass, methodName).paramTypes()[index].name;
     let method: Function = targetClass[methodName];
     let paramName:string = Helper.getArguments(method)[index];
     let parameterWrapper: Object = {

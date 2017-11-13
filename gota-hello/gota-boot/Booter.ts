@@ -30,14 +30,14 @@ const REQUEST_METHOD = {
     DELETE : 'delete'
 };
 
-export interface ParameterWrapper{
+interface ParameterWrapper{
     designMetaData: string,//Query, Path, Body
     name: string,
     type: any,
     value?:any
 }
 
-export interface FunctionWrapper{
+interface FunctionWrapper{
     function: Function;
     requestMethod: string | Array<string>
     path: string | Array<string>
@@ -46,7 +46,7 @@ export interface FunctionWrapper{
     awaitedType?: any;
 }
 
-export interface ServiceWrapper{
+interface ServiceWrapper{
     service: any;
     path: string | Array<string>;
     functionWrappers: Array<FunctionWrapper>;
@@ -63,7 +63,7 @@ interface ServiceInformation{
 }
 
 export default class Booter {
-    public static buildServiceWrapper(service: any): ServiceWrapper {
+    private static buildServiceWrapper(service: any): ServiceWrapper {
         let serviceClass = service.constructor;
         let serviceMetaData = Reflect.getMetadata(DESIGN_META_DATA.SERVICE, serviceClass);
         let functionWrappers = this.buildMethodWrappers(service);
@@ -80,7 +80,7 @@ export default class Booter {
         Object.getOwnPropertyNames(service.constructor.prototype).forEach(methodName=> {
             if (methodName !== 'constructor') {
                 let methodWrapper = this.buildMethodWrapper(service, methodName);
-                methodWrappers.push()
+                methodWrappers.push(methodWrapper)
             }
         });
         return methodWrappers;
@@ -162,7 +162,7 @@ export default class Booter {
         return _arguments;
     }
 
-    public static collectServiceInformation(serviceWrapper: ServiceWrapper, functionWrapper: FunctionWrapper): Array<ServiceInformation>{
+    private static collectServiceInformation(serviceWrapper: ServiceWrapper): Array<ServiceInformation>{
         let serviceInformationList: Array<ServiceInformation> = [];
 
         let servicePaths = serviceWrapper.path;
@@ -200,7 +200,7 @@ export default class Booter {
         return serviceInformationList;
     }
 
-    public static bootAService(expressApplication: any, serviceInformation: ServiceInformation){
+    private static bootAcollectionServiceItem(expressApplication: any, serviceInformation: ServiceInformation):void{
         let app = expressApplication;
         let path: string = serviceInformation.path;
         let requestMethod: string = serviceInformation.requestMethod ;
@@ -210,6 +210,14 @@ export default class Booter {
         app[requestMethod](path, (req, res) => {
             let _arguments = this.getArguments(req, res, serviceInformation.requestInformation);
 
+            let promise: Promise<any> = Promise.resolve(_function.apply(service, _arguments));
+            promise.then(result => {
+                if(result && !isNaN(result)){
+                    result = result.toString();
+                }
+                res.status(200).send(result);
+            });
+            /*
             if(serviceInformation.awaitedType){
                 let promise: Promise<any> = _function.apply(service, _arguments);
                 promise.then(result => {
@@ -224,13 +232,29 @@ export default class Booter {
                     result = result.toString();
                 }
                 res.status(200).send(result);
-            }
+            }*/
         })
     }
 
-    public static boot(expressApplication: any, serviceInformationList: Array<ServiceInformation>){
-        serviceInformationList.forEach(serviceInformation =>{
-            this.bootAService(expressApplication, serviceInformation);
+    private static bootCollectionService(expressApplication: any, config: any, collectionService: Array<ServiceInformation>):void{
+        collectionService.forEach(serviceInformation => {
+            if(config.devMode){
+                console.log('Apply method "%s" for url: "%s"', serviceInformation.requestMethod, serviceInformation.path);
+            }
+            this.bootAcollectionServiceItem(expressApplication, serviceInformation);
         })
     }
+
+
+
+
+
+    public static bootService(expressApplication: any, config: object, service: any){
+        let serviceWrapper: ServiceWrapper = Booter.buildServiceWrapper(service);
+        let serviceInformationList: Array<ServiceInformation> = Booter.collectServiceInformation(serviceWrapper);
+        Booter.bootCollectionService(expressApplication, config, serviceInformationList);
+    }
+
+
+
 }
