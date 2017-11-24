@@ -206,7 +206,7 @@ export default class Booter {
         let requestMethod: string = serviceInformation.requestMethod ;
         let _function = serviceInformation.function;
         let service = serviceInformation.service;
-        serviceInformation
+
         app[requestMethod](path, (req, res) => {
             let _arguments = this.getArguments(req, res, serviceInformation.requestInformation);
 
