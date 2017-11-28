@@ -246,15 +246,71 @@ export default class Booter {
     }
 
 
+    /////////////////////////////
+    private static collectOptionsServiceInformation(serviceInformationList: Array<ServiceInformation>): any{
+        let urls = serviceInformationList
+            .map(item => item.path)
+            .filter((item, pos, self) => self.indexOf(item) == pos);
 
+        let collectionOptionService = {};
+        urls.forEach(url => {
+            let collectionOptionServiceItem = collectionOptionService[url] || {};
+            let sameUrlServiceInformation = serviceInformationList.filter(item => item.path===url);
+            sameUrlServiceInformation.forEach(serviceInformation =>{
+                collectionOptionServiceItem[serviceInformation.requestMethod] = {
+                    service: serviceInformation.service,
+                    function: serviceInformation.function,
+                    returnType: serviceInformation.returnType,
+                    awaitedType: serviceInformation.awaitedType,
+                    requestInformation: serviceInformation.requestInformation
+                }
+            });
+            collectionOptionService[url] = collectionOptionServiceItem;
+        });
 
-
-    public static bootService(expressApplication: any, config: object, service: any){
-        let serviceWrapper: ServiceWrapper = Booter.buildServiceWrapper(service);
-        let serviceInformationList: Array<ServiceInformation> = Booter.collectServiceInformation(serviceWrapper);
-        Booter.bootCollectionService(expressApplication, config, serviceInformationList);
+        return collectionOptionService;
     }
 
+    private static buildAOptionSummary(url:string, object:any){
+        let returnObject = {url:url};
+        Object.keys(object).forEach(key =>{
+            let responseType:any = object[key]['awaitedType'] || object[key]['returnType'];
+            let requestData = object[key]['requestInformation'].map(item =>{
+                return {requestType:item.designMetaData, name: item.name ,dataType:item.type};
+            })
+            returnObject[key] =
+                {
+                    requestData:requestData,
+                    responseType:responseType
+                }
+        });
+        return returnObject;
+    }
+    private static bootSummaryService(expressApplication: any, config: any,path:string | string[],  optionServiceInformationList:any):void{
+        let summary =[];
+        Object.keys(optionServiceInformationList).forEach(key =>{
+            summary.push(Booter.buildAOptionSummary(key,optionServiceInformationList[key]));
+        });
+        let paths: Array<string> = Array.isArray(path)?path as Array<string>:[path];
+        paths.forEach(item=>{
+            expressApplication.get(item,(request, response)=>{
+                response.status(200).send(JSON.stringify(summary));
+            });
+        })
 
+    }
+
+    /////////////////////////////
+
+
+
+    public static bootService(expressApplication: any, config: object, service: any) {
+        let serviceWrapper: ServiceWrapper = Booter.buildServiceWrapper(service);
+        let serviceInformationList: Array<ServiceInformation> = Booter.collectServiceInformation(serviceWrapper);
+        let optionServiceInformationList = Booter.collectOptionsServiceInformation(serviceInformationList);
+        Booter.bootCollectionService(expressApplication, config, serviceInformationList);
+        Booter.bootSummaryService(expressApplication, config, serviceWrapper.path, optionServiceInformationList);
+
+    }
 
 }

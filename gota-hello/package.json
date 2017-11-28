@@ -2,15 +2,19 @@
   "name": "gota-hello",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "dist/index.js",
   "scripts": {
+    "build": "gtc",
+    "start": "node dist/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@types/compression": "0.0.34"
+    "@types/compression": "0.0.34",
+    "express": "^4.16.2",
+    "reflect-metadata": "^0.1.10"
   },
   "devDependencies": {
     "typescript": "^2.5.2"
