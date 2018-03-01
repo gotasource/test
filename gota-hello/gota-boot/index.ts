@@ -5,7 +5,8 @@ import * as  compression from 'compression';
 import Booter from "./Booter";
 
 const DESIGN_META_DATA = {
-    APP : 'design:meta:data:key:APP',
+    APP : 'design:meta:data:key:app',
+    CONFIG : 'design:meta:data:key:config',
     SERVICE : 'design:meta:data:key:service',
     PATH : 'design:meta:data:key:path',
     METHOD : 'design:meta:data:key:method',
@@ -67,7 +68,10 @@ export function GotaBoot(appClass: Function) {
     let app = initApp();
 
     serviceClasses.forEach(serviceClass => {
-        Booter.bootService(app, config, new serviceClass());
+        let serviceMetaData = Reflect.getMetadata(DESIGN_META_DATA.SERVICE, serviceClass);
+        let serviceConfig = Object.assign({},config, serviceMetaData.config);
+        Reflect.defineMetadata(DESIGN_META_DATA.CONFIG, serviceConfig, serviceClass);
+        Booter.bootService(app, new serviceClass());
         app.listen(config.port, function () {
             console.log('>> %s app is listening at %s <<',gotaAppMetadata.name , config.port);
         });

@@ -6,6 +6,8 @@ import {accessSync} from "fs";
 import Helper from "../gota-helper/index";
 
 const DESIGN_META_DATA = {
+    APP : 'design:meta:data:key:app',
+    CONFIG : 'design:meta:data:key:config',
     SERVICE : 'design:meta:data:key:service',
     SERVICE_MAPPING : 'design:meta:data:key:service:mapping',
     PATH : 'design:meta:data:key:path',
@@ -77,11 +79,11 @@ export default class Booter {
 
     private static buildMethodWrappers(service: any): Array<FunctionWrapper>{
         let methodWrappers: Array<FunctionWrapper> = [];
-        Object.getOwnPropertyNames(service.constructor.prototype).forEach(methodName=> {
-            if (methodName !== 'constructor') {
+        Object.getOwnPropertyNames(service.constructor.prototype).filter(function (property) {
+            return typeof service[property] === 'function' && property !== 'constructor';
+        }).forEach(methodName=> {
                 let methodWrapper = this.buildMethodWrapper(service, methodName);
-                methodWrappers.push(methodWrapper)
-            }
+                methodWrappers.push(methodWrapper);
         });
         return methodWrappers;
     }
@@ -236,8 +238,9 @@ export default class Booter {
         })
     }
 
-    private static bootCollectionService(expressApplication: any, config: any, collectionService: Array<ServiceInformation>):void{
+    private static bootCollectionService(expressApplication: any, collectionService: Array<ServiceInformation>):void{
         collectionService.forEach(serviceInformation => {
+            let config : any = Reflect.getMetadata(DESIGN_META_DATA.CONFIG, serviceInformation.service);
             if(config.devMode){
                 console.log('Apply method "%s" for url: "%s"', serviceInformation.requestMethod, serviceInformation.path);
             }
@@ -275,7 +278,7 @@ export default class Booter {
         let returnObject = {url:url};
         Object.keys(object).forEach(key =>{
             let responseType:any = object[key]['awaitedType'] || object[key]['returnType'];
-            let requestData = object[key]['requestInformation'].map(item =>{
+            let requestData = object[key]['requestInformation'].map(item => {
                 return {requestType:item.designMetaData, name: item.name ,dataType:item.type};
             })
             returnObject[key] =
@@ -286,7 +289,7 @@ export default class Booter {
         });
         return returnObject;
     }
-    private static bootSummaryService(expressApplication: any, config: any,path:string | string[],  optionServiceInformationList:any):void{
+    private static bootSummaryService(expressApplication: any,path:string | string[],  optionServiceInformationList:any):void{
         let summary =[];
         Object.keys(optionServiceInformationList).forEach(key =>{
             summary.push(Booter.buildAOptionSummary(key,optionServiceInformationList[key]));
@@ -304,12 +307,12 @@ export default class Booter {
 
 
 
-    public static bootService(expressApplication: any, config: object, service: any) {
+    public static bootService(expressApplication: any, service: any) {
         let serviceWrapper: ServiceWrapper = Booter.buildServiceWrapper(service);
         let serviceInformationList: Array<ServiceInformation> = Booter.collectServiceInformation(serviceWrapper);
         let optionServiceInformationList = Booter.collectOptionsServiceInformation(serviceInformationList);
-        Booter.bootCollectionService(expressApplication, config, serviceInformationList);
-        Booter.bootSummaryService(expressApplication, config, serviceWrapper.path, optionServiceInformationList);
+        Booter.bootCollectionService(expressApplication, serviceInformationList);
+        Booter.bootSummaryService(expressApplication, serviceWrapper.path, optionServiceInformationList);
 
     }
 

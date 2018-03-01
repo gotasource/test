@@ -1,9 +1,11 @@
 
 //https://rbuckton.github.io/reflect-metadata/#syntax
-import "reflect-metadata";
+import 'reflect-metadata'
 import Helper from "../gota-helper/index";
 
 const DESIGN_META_DATA = {
+    APP : 'design:meta:data:key:app',
+    CONFIG : 'design:meta:data:key:config',
     SERVICE : 'design:meta:data:key:service',
     SERVICE_MAPPING : 'design:meta:data:key:service:mapping',
     PATH : 'design:meta:data:key:path',
@@ -35,7 +37,7 @@ export class RequestMethod{
     static  DELETE = 'delete';
 }
 
-export function Service(mapping:{ name?: string, path: string | Array<string>}) {
+export function Service(mapping:{ name?: string, path: string | Array<string>, config?:object}) {
 	return function(... args : any[]): void {
 	    let serviceName = mapping.name;
 	    if(!serviceName){
@@ -43,10 +45,46 @@ export function Service(mapping:{ name?: string, path: string | Array<string>}) 
         }
         let serviceWrapper: Object = {
 	        name: serviceName,
-            path: mapping.path
+            path: mapping.path,
+            config: mapping.config
+
         };
 	    Reflect.defineMetadata(DESIGN_META_DATA.SERVICE, serviceWrapper, args[0]);
 	}
+}
+
+export function Config(configKey?:string) {
+    return function(target: any, property: string): void {
+        if(!configKey){
+            configKey = property;
+        }
+
+        // property value
+        // var _val = target[property];
+
+        // property getter
+        var getter = function () {
+            let config  = Reflect.getMetadata(DESIGN_META_DATA.CONFIG, target.constructor);
+            return config[configKey];
+        };
+
+        // property setter
+        var setter = function (newVal) {
+            throw Error('Can not change config value');
+        };
+
+        // Delete property.
+        if (delete target[property]) {
+
+            // Create new property with getter and setter
+            Object.defineProperty(target, property, {
+                get: getter,
+                set: setter,
+                enumerable: true,
+                configurable: true
+            });
+        }
+    }
 }
 
 export function ServiceMapping(mapping:{name?: string, path : string | Array<string>, requestMethod?: string | Array<string>} ) {

@@ -1,5 +1,5 @@
 
-import {QueryParameter, RequestMethod, Service, ServiceMapping} from "../gota-service";
+import {Config, QueryParameter, RequestMethod, Service, ServiceMapping} from "../gota-service";
 
 function timeout(ms:number) {
     return new Promise(resolve => setTimeout(resolve, ms));
@@ -19,13 +19,17 @@ export class User{
 
 }
 
-@Service({path:'/hello'})
+@Service({path:'/hello', config:{port:2000}})
 export class Hello{
+    @Config()
+    private port : number;
+
     constructor(){
     }
 
     @ServiceMapping({path:['/hi','/hii']})
     readCategory(@QueryParameter lastName:string, @QueryParameter firstName:string): User{
+        console.log('port >>>>>>>>>>>> '+ this.port);
         let user = new User(firstName, lastName);
         return user;
     }
