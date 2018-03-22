@@ -1,12 +1,12 @@
 
-import {QueryParameter, RequestMethod, Service, ServiceMapping, Config} from "../gota-service";
+import {QueryParameter, RequestMethod, Service, ServiceMapping} from "../gota-service";
 
 function timeout(ms:number) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
-async function sleep(contex:any, fn:Function, args:Array<string>) {
+async function sleep(fn:Function, args:Array<string>) {
     await timeout(3000);
-    return fn.apply(contex, args);
+    return fn(...args);
 }
 export class User{
 
@@ -19,9 +19,8 @@ export class User{
 
 }
 
-@Service({path:'/hello'})
-export class Hello{
-
+@Service({path:'/user-service'})
+export class UserService{
     constructor(){
     }
 
@@ -33,6 +32,6 @@ export class Hello{
 
     @ServiceMapping({requestMethod:[RequestMethod.GET,RequestMethod.PUT], path: '/bye'})
     async readCategory1(@QueryParameter lastName:string, @QueryParameter firstName:string):Promise<User>{
-        return await sleep(this, this.readCategory, [lastName, firstName]);
+        return await sleep(this.readCategory, [lastName, firstName]);
     }
 }

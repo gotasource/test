@@ -6,6 +6,7 @@ import Helper from "../gota-helper/index";
 const DESIGN_META_DATA = {
     APP : 'design:meta:data:key:app',
     CONFIG : 'design:meta:data:key:config',
+    POST_INIT : 'design:meta:data:key:post.init',
     SERVICE : 'design:meta:data:key:service',
     SERVICE_MAPPING : 'design:meta:data:key:service:mapping',
     PATH : 'design:meta:data:key:path',
@@ -23,32 +24,36 @@ const DESIGN_META_DATA = {
 };
 
 const REQUEST_METHOD = {
-    GET :'get',
-    POST :'post',//create
-    PUT :'put',// replace
-    PATCH : 'patch',// update
-    DELETE : 'delete'
+    OPTIONS: 'OPTIONS',
+    GET :'GET',
+    POST :'POST',//CREATE
+    PUT :'PUT',// REPLACE
+    PATCH : 'PATCH',// UPDATE
+    DELETE : 'DELETE'
 };
 export class RequestMethod{
-    static GET  =  'get';
-    static  POST  = 'post';
-    static  PUT  = 'put';
-    static  PATCH  = 'patch';
-    static  DELETE = 'delete';
+    static OPTIONS = 'OPTIONS';
+    static GET  =  'GET';
+    static  POST  = 'POST';
+    static  PUT  = 'PUT';
+    static  PATCH  = 'PATCH';
+    static  DELETE = 'DELETE';
 }
 
-export function Service(mapping:{ name?: string, path: string | Array<string>, config?:object}) {
+export function Service(mapping:{ name?: string, path: string | Array<string>, config?:object, models?: Array<any>}) {
 	return function(... args : any[]): void {
-	    let serviceName = mapping.name;
-	    if(!serviceName){
-            serviceName = args[0].name;
-        }
-        let serviceWrapper: Object = {
-	        name: serviceName,
-            path: mapping.path,
-            config: mapping.config
+        // let serviceName = mapping.name;
+        // if(!serviceName){
+        //     serviceName = args[0].name;
+        // }
+        // let serviceWrapper = {
+	     //    name: serviceName,
+        //     path: mapping.path,
+        //     config: mapping.config
+        //
+        // };
 
-        };
+        let serviceWrapper = Object.assign({name: args[0].name}, mapping);
 	    Reflect.defineMetadata(DESIGN_META_DATA.SERVICE, serviceWrapper, args[0]);
 	}
 }
@@ -63,13 +68,29 @@ export function Config(configKey?:string) {
         // var _val = target[property];
 
         // property getter
-        var getter = function () {
-            let config  = Reflect.getMetadata(DESIGN_META_DATA.CONFIG, target.constructor);
-            return config[configKey];
+         let getter = function () {
+            let config  = Reflect.getMetadata(DESIGN_META_DATA.CONFIG, target);
+            if(!config){
+				console.log('\n'+`Config "${property}" of ${target.name} has not initiated.`);
+				console.log(`Please check class ${target.name} and config into scanner App.`+'\n');
+				return undefined;
+			}
+			let value = config[configKey as string];
+			if(!value && (configKey as string).indexOf('.') > -1){
+				let configKeys = (configKey as string).split('.');
+				value = config;
+				for(let key of configKeys) {
+					value = value[key];
+					if(!value){
+						break;
+					}
+				}
+			}
+			return value;
         };
 
         // property setter
-        var setter = function (newVal) {
+        let setter = function (newVal:any) {
             throw Error('Can not change config value');
         };
 
@@ -87,10 +108,46 @@ export function Config(configKey?:string) {
     }
 }
 
+export function Autowired(target : any, property : string) {
+    var t = Reflect.getMetadata("design:typeinfo", target, property).type();
+    let obj = new t();
+    var getter = function () {
+        return obj;
+    };
+    // property setter
+    var setter = function (newVal: any) {
+        throw Error('Can not change config value');
+    };
+
+    // Delete property.
+    if (delete target[property]) {
+
+        // Create new property with getter and setter
+        Object.defineProperty(target, property, {
+            get: getter,
+            set: setter,
+            enumerable: true,
+            configurable: true
+        });
+    }
+}
+
+
+export function PostInit(target : any, methodName : string) {
+    let initMethodNames: Array<Object> = Reflect.getOwnMetadata(DESIGN_META_DATA.POST_INIT, target) || [];
+    initMethodNames.push(methodName);
+    Reflect.defineMetadata(DESIGN_META_DATA.POST_INIT, initMethodNames, target);
+}
+
 export function ServiceMapping(mapping:{name?: string, path : string | Array<string>, requestMethod?: string | Array<string>} ) {
     return function(... args : any[]): void {
         let typeInfo = Reflect.getMetadata("design:typeinfo", args[0], args[1]);
-        let functionWrapper: Object = {
+        if (!typeInfo.returnType){
+			throw new Error('Missing returnType of Method ' +args[0].constructor.name+'.'+ args[1]);
+		} else if(typeInfo.returnType === Promise && !typeInfo.awaitedType){
+			throw new Error('Missing awaitedType of Method ' +args[0].constructor.name+'.'+ args[1]);
+		}
+		let functionWrapper: Object = {
             path: mapping.path,
             requestMethod: mapping.requestMethod,
             returnType:typeInfo.returnType,
@@ -110,18 +167,18 @@ export function ServiceMapping(mapping:{name?: string, path : string | Array<str
 //https://www.typescriptlang.org/docs/handbook/decorators.html#metadata
 //http://blog.wolksoftware.com/decorators-metadata-reflection-in-typescript-from-novice-to-expert-part-4
 
-function Parameter(designMetaData: string, targetClass: any, methodName: string | symbol, index: number) {
-    let paramType: string = Reflect.getMetadata("design:typeinfo", targetClass, methodName).paramTypes()[index].name;
-    let method: Function = targetClass[methodName];
+function Parameter(designMetaData: string, target: any, methodName: string | symbol, index: number) {
+    let paramType: any = Reflect.getMetadata("design:typeinfo", target, methodName).paramTypes()[index];
+    let method: Function = target[methodName];
     let paramName:string = Helper.getArguments(method)[index];
     let parameterWrapper: Object = {
         designMetaData: designMetaData,
         name: paramName,
         type: paramType
     };
-    let parameterWrappers: Array<Object> = Reflect.getOwnMetadata(DESIGN_META_DATA.PARAMETER, targetClass, methodName) || [];
+    let parameterWrappers: Array<Object> = Reflect.getOwnMetadata(DESIGN_META_DATA.PARAMETER, target, methodName) || [];
     parameterWrappers[index] = parameterWrapper;
-    Reflect.defineMetadata(DESIGN_META_DATA.PARAMETER, parameterWrappers, targetClass, methodName);
+    Reflect.defineMetadata(DESIGN_META_DATA.PARAMETER, parameterWrappers, target, methodName);
 }
 
 export function PathParameter(target: Object, name: string | symbol, index: number) {

@@ -1,8 +1,6 @@
 import "reflect-metadata";
-import * as express from 'express';
-import * as bodyParser from 'body-parser';
-import * as  compression from 'compression';
 import Booter from "./Booter";
+import GotaServer from "../gota-server";
 
 const DESIGN_META_DATA = {
     APP : 'design:meta:data:key:app',
@@ -22,11 +20,12 @@ const DESIGN_META_DATA = {
 };
 
 const REQUEST_METHOD = {
-    GET :'get',
-    POST :'post',//create
-    PUT :'put',// replace
-    PATCH : 'patch',// update
-    DELETE : 'delete'
+    OPTIONS: 'OPTIONS',
+    GET :'GET',
+    POST :'POST',//CREATE
+    PUT :'PUT',// REPLACE
+    PATCH : 'PATCH',// UPDATE
+    DELETE : 'DELETE'
 };
 
 export function GotaApp(obj:{name?: string, scanner:Array<Function>, config:object}) {
@@ -35,21 +34,7 @@ export function GotaApp(obj:{name?: string, scanner:Array<Function>, config:obje
 
 
 function initApp(){
-    let app = express();
-    app.use(function (req, res, next) {
-
-        // Website you wish to allow to connect
-        res.setHeader('Access-Control-Allow-Origin', 'http://localhost:4200');
-        // Request methods you wish to allow
-        res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
-        // Request headers you wish to allow
-        res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With, content-type, token');
-        // Set to true if you need the website to include cookies in the requests sent
-        // to the API (e.g. in case you use sessions)
-        //res.setHeader('Access-Control-Allow-Credentials', true);
-        // Pass to next layer of middleware
-        next();
-    });
+    let app = new GotaServer();
     return app;
 }
 
@@ -66,14 +51,18 @@ export function GotaBoot(appClass: Function) {
     }
 
     let app = initApp();
-
+    //console.log(`${gotaAppMetadata.name || appClass.name} is starting at ${config.hostName}:${config.port}`);
     serviceClasses.forEach(serviceClass => {
-        let serviceMetaData = Reflect.getMetadata(DESIGN_META_DATA.SERVICE, serviceClass);
-        let serviceConfig = Object.assign({},config, serviceMetaData.config);
+         let serviceMetaData = Reflect.getMetadata(DESIGN_META_DATA.SERVICE, serviceClass);
+        let serviceConfig = Object.assign({},config, serviceMetaData? serviceMetaData.config: undefined);
         Reflect.defineMetadata(DESIGN_META_DATA.CONFIG, serviceConfig, serviceClass);
-        Booter.bootService(app, new serviceClass());
-        app.listen(config.port, function () {
-            console.log('>> %s app is listening at %s <<',gotaAppMetadata.name , config.port);
-        });
-    })
+        if(serviceMetaData){
+            let models = serviceMetaData.models;
+            Booter.bootModels(app, serviceMetaData.path, models);
+			Booter.bootService(app, new serviceClass());
+		}
+    });
+	app.listen(config.port, config.hostName,function () {
+	    console.log(`${gotaAppMetadata.name || appClass.name} is listening at ${config.hostName}:${config.port}`);
+    });
 }

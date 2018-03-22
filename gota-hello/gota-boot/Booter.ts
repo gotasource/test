@@ -1,9 +1,5 @@
-import * as express from 'express';
-import * as bodyParser from 'body-parser';
-import * as  compression from 'compression';
 import "reflect-metadata";
-import {accessSync} from "fs";
-import Helper from "../gota-helper/index";
+import {DAO} from "../data-access/DAO";
 
 const DESIGN_META_DATA = {
     APP : 'design:meta:data:key:app',
@@ -25,11 +21,12 @@ const DESIGN_META_DATA = {
 };
 
 const REQUEST_METHOD = {
-    GET :'get',
-    POST :'post',//create
-    PUT :'put',// replace
-    PATCH : 'patch',// update
-    DELETE : 'delete'
+    OPTIONS: 'OPTIONS',
+    GET :'GET',
+    POST :'POST',//CREATE
+    PUT :'PUT',// REPLACE
+    PATCH : 'PATCH',// UPDATE
+    DELETE : 'DELETE'
 };
 
 interface ParameterWrapper{
@@ -80,7 +77,7 @@ export default class Booter {
     private static buildMethodWrappers(service: any): Array<FunctionWrapper>{
         let methodWrappers: Array<FunctionWrapper> = [];
         Object.getOwnPropertyNames(service.constructor.prototype).filter(function (property) {
-            return typeof service[property] === 'function' && property !== 'constructor';
+            return typeof service[property] === 'function' && service[property].toString().indexOf('class')!==0;
         }).forEach(methodName=> {
                 let methodWrapper = this.buildMethodWrapper(service, methodName);
                 methodWrappers.push(methodWrapper);
@@ -202,49 +199,22 @@ export default class Booter {
         return serviceInformationList;
     }
 
-    private static bootAcollectionServiceItem(expressApplication: any, serviceInformation: ServiceInformation):void{
-        let app = expressApplication;
+    private static bootAcollectionServiceItem(server: any, serviceInformation: ServiceInformation):void{
+        let app = server;
         let path: string = serviceInformation.path;
         let requestMethod: string = serviceInformation.requestMethod ;
         let _function = serviceInformation.function;
         let service = serviceInformation.service;
-
-        app[requestMethod](path, (req, res) => {
-            let _arguments = this.getArguments(req, res, serviceInformation.requestInformation);
-
-            let promise: Promise<any> = Promise.resolve(_function.apply(service, _arguments));
-            promise.then(result => {
-                if(result && !isNaN(result)){
-                    result = result.toString();
-                }
-                res.status(200).send(result);
-            });
-            /*
-            if(serviceInformation.awaitedType){
-                let promise: Promise<any> = _function.apply(service, _arguments);
-                promise.then(result => {
-                    if(result && !isNaN(result)){
-                        result = result.toString();
-                    }
-                    res.status(200).send(result);
-                });
-            }else{
-                let result = _function.apply(service, _arguments);
-                if(result && !isNaN(result)){
-                    result = result.toString();
-                }
-                res.status(200).send(result);
-            }*/
-        })
+        app.addMapping(path, requestMethod, serviceInformation.requestInformation, _function, service)
     }
 
-    private static bootCollectionService(expressApplication: any, collectionService: Array<ServiceInformation>):void{
+    private static bootCollectionService(server: any, collectionService: Array<ServiceInformation>):void{
         collectionService.forEach(serviceInformation => {
-            let config : any = Reflect.getMetadata(DESIGN_META_DATA.CONFIG, serviceInformation.service);
-            if(config.devMode){
-                console.log('Apply method "%s" for url: "%s"', serviceInformation.requestMethod, serviceInformation.path);
-            }
-            this.bootAcollectionServiceItem(expressApplication, serviceInformation);
+            let config : any = Reflect.getMetadata(DESIGN_META_DATA.CONFIG, serviceInformation.service.constructor);
+            // if(config.devMode){
+            //     console.log('Apply method "%s" for url: "%s"', serviceInformation.requestMethod, serviceInformation.path);
+            // }
+            this.bootAcollectionServiceItem(server, serviceInformation);
         })
     }
 
@@ -277,29 +247,47 @@ export default class Booter {
     private static buildAOptionSummary(url:string, object:any){
         let returnObject = {url:url};
         Object.keys(object).forEach(key =>{
-            let responseType:any = object[key]['awaitedType'] || object[key]['returnType'];
-            let requestData = object[key]['requestInformation'].map(item => {
-                return {requestType:item.designMetaData, name: item.name ,dataType:item.type};
-            })
+            let responseType:any = object[key]['awaitedType'] || object[key]['returnType'] || function(){return String};
+            let requestData:{path?: object[], headers?: object[], query?: object[], body?: any[]} = {};
+            object[key]['requestInformation'].forEach(item => {
+                switch (item.designMetaData){
+                    case DESIGN_META_DATA.PATH_PARAMETER:
+                        requestData.path = requestData.path || [];
+                        requestData.path.push({name: item.name, type:item.type.name});
+                        break;
+                    case DESIGN_META_DATA.HEADERS_PARAMETER:
+                        requestData.headers = requestData.headers || [];
+                        requestData.headers.push({name: item.name, type:item.type.name});
+                        break;
+                    case DESIGN_META_DATA.QUERY_PARAMETER:
+                        requestData.query = requestData.query || [];
+                        requestData.query.push({name: item.name, type:item.type.name});
+                        break;
+                    case DESIGN_META_DATA.BODY_PARAMETER:
+                        requestData.body = requestData.body || [];
+                        requestData.body.push({name: item.name, type:item.type.name});
+                        break;
+                }
+            });
             returnObject[key] =
                 {
                     requestData:requestData,
-                    responseType:responseType
+                    responseType:responseType().name
                 }
         });
         return returnObject;
     }
-    private static bootSummaryService(expressApplication: any,path:string | string[],  optionServiceInformationList:any):void{
+    private static bootSummaryService(server: any,path:string | string[],  optionServiceInformationList:any):void{
         let summary =[];
         Object.keys(optionServiceInformationList).forEach(key =>{
             summary.push(Booter.buildAOptionSummary(key,optionServiceInformationList[key]));
         });
-        let paths: Array<string> = Array.isArray(path)?path as Array<string>:[path];
-        paths.forEach(item=>{
-            expressApplication.get(item,(request, response)=>{
-                response.status(200).send(JSON.stringify(summary));
-            });
+
+        summary.forEach(s=>{
+            server.addMapping(s.url, REQUEST_METHOD.OPTIONS, [],() => s, null);
         })
+
+
 
     }
 
@@ -307,12 +295,110 @@ export default class Booter {
 
 
 
-    public static bootService(expressApplication: any, service: any) {
+    public static bootService(server: any, service: any) {
         let serviceWrapper: ServiceWrapper = Booter.buildServiceWrapper(service);
         let serviceInformationList: Array<ServiceInformation> = Booter.collectServiceInformation(serviceWrapper);
         let optionServiceInformationList = Booter.collectOptionsServiceInformation(serviceInformationList);
-        Booter.bootCollectionService(expressApplication, serviceInformationList);
-        Booter.bootSummaryService(expressApplication, serviceWrapper.path, optionServiceInformationList);
+        Booter.bootCollectionService(server, serviceInformationList);
+        Booter.bootSummaryService(server, serviceWrapper.path, optionServiceInformationList);
+
+    }
+
+    public static bootModels(server: any, servicePath: string, models: any[]) {
+        models.forEach(model =>{
+            Booter.bootAModel(server, servicePath, model);
+        });
+
+    }
+
+    private static bootAModel(server: any, servicePath: string, model: any) {
+        let dao = new DAO(model);
+        let modelPath = model.name.replace(/[A-Z]/g, (match, offset, string)=> {
+            return (offset ? '-' : '') + match.toLowerCase();
+        });
+
+        let bodyParameter:ParameterWrapper = {
+            designMetaData: DESIGN_META_DATA.BODY,
+            name: 'body',
+            type: Object
+        }
+
+        let idPathParameter:ParameterWrapper = {
+            designMetaData: DESIGN_META_DATA.PATH_PARAMETER,
+            name: 'id',
+            type: String
+        }
+
+        let queryParameter:ParameterWrapper = {
+            designMetaData: DESIGN_META_DATA.QUERY,
+            name: 'query',
+            type: Object
+        }
+
+        let executes = {
+            search: async function (query){
+                let t = await dao.search(query);
+                return t;
+            },
+            read: async function (id){
+                let t = await dao.read(id);
+                return t;
+            },
+            create: async function (body){
+                // let _id, result;
+                // if(query && Object.keys(query).find(key => query[key] == '$')){
+                //     result = await dao.createChild(query, body);
+                // }else {
+                    let _id = await dao.create(body);
+                //}
+
+                return {_id: _id};
+            },
+            createChild:  async function (id, query, body){
+                let result;
+                if(query && Object.keys(query).find(key => query[key] == '$')) {
+                    let childProperty = Object.keys(query).find(key => query[key] == '$')
+                    result = await dao.createChild(id, childProperty, body);
+                }
+                return {result: result};
+            },
+            update: async function (id, query, body){
+                let result;
+                if(query && Object.keys(query).find(key => query[key] == '$')) {
+                    let childProperty = Object.keys(query).find(key => query[key] == '$');
+                    let childQuery = Object.assign(query);
+                    childQuery[childProperty] = undefined;
+                    result = await dao.updateChild(id, childProperty, childQuery, body);
+                }else{
+                    result = await dao.update(id, body);
+                }
+
+                return {result: result};
+            },
+            delete: async function (id, body){
+                let result = await dao.delete(id);
+                return {result: result};
+            },
+            options: ()=>{ return {ok:1}},
+            updateMany: async function (query, body){
+                let result = await dao.updateMany(query, body);
+                return {result: result};
+            },
+        };
+
+        server.addMapping(`${servicePath}/${modelPath}`,  REQUEST_METHOD.OPTIONS, [], executes.options);
+        server.addMapping(`${servicePath}/${modelPath}`,  REQUEST_METHOD.GET, [queryParameter],  executes.search);
+        server.addMapping(`${servicePath}/${modelPath}`,  REQUEST_METHOD.POST, [bodyParameter], executes.create);
+
+        //update many
+        server.addMapping(`${servicePath}/${modelPath}`,  REQUEST_METHOD.PATCH, [queryParameter, bodyParameter], executes.updateMany);
+
+        server.addMapping(`${servicePath}/${modelPath}/:id`,  REQUEST_METHOD.OPTIONS, [], executes.options);
+        server.addMapping(`${servicePath}/${modelPath}/:id`,  REQUEST_METHOD.GET, [idPathParameter], executes.read);
+        server.addMapping(`${servicePath}/${modelPath}/:id`,  REQUEST_METHOD.POST, [idPathParameter, queryParameter, bodyParameter], executes.createChild);
+        server.addMapping(`${servicePath}/${modelPath}/:id`,  REQUEST_METHOD.PUT, [idPathParameter, queryParameter, bodyParameter], executes.update);
+        server.addMapping(`${servicePath}/${modelPath}/:id`,  REQUEST_METHOD.PATCH, [idPathParameter, queryParameter, bodyParameter], executes.update);
+        server.addMapping(`${servicePath}/${modelPath}/:id`,  REQUEST_METHOD.DELETE, [idPathParameter], executes.delete);
 
     }
 
