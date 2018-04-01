@@ -4,5 +4,5 @@ export declare class Category extends Model {
     name: string;
     avatars: string[];
     children: Category[];
-    order: Number;
+    order: number;
 }

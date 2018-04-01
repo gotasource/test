@@ -450,21 +450,21 @@ export default class GotaServer{
                                     value = res;
                                     break;
                                 case DESIGN_META_DATA.QUERY :
-                                    value = req.query;
+                                    value = req.query || {};
                                     break;
                                 case DESIGN_META_DATA.QUERY_PARAMETER :
                                     value = req.query ? req.query[item.name]: undefined;
                                     value = parseValue(value, item);
                                     break;
                                 case DESIGN_META_DATA.BODY :
-                                    value = req.body;
+                                    value = req.body || {};
                                     break;
                                 case DESIGN_META_DATA.BODY_PARAMETER :
                                     value = req.body? req.body[item.name]: undefined;
                                     value = parseValue(value, item);
                                     break;
                                 case DESIGN_META_DATA.HEADERS :
-                                    value = req.headers;
+                                    value = req.headers || {};
                                     break;
                                 case DESIGN_META_DATA.HEADERS_PARAMETER :
                                     let argLowerCase = item.name.replace(/[A-Z]/g, (match, offset, string) => {

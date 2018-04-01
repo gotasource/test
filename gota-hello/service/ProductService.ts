@@ -4,14 +4,15 @@ import {SiteInfoDAO} from "../data-access/SiteInfoDAO";
 import {URL} from "url";
 import {CategoryDAO} from "../data-access/CategoryDAO";
 import {Category} from "../models/Category";
+import {Product} from "../models/Product";
+import {ProductDAO} from "../data-access/ProductDAO";
+import {Connection} from "../data-access/Connection";
 
-@Service({path:'/product-service', models:[Category]})
+@Service({path:'/product-service', models:[Category, Product]})
 export class ProductService{
     @Autowired
     public categoryDAO: CategoryDAO;
-    constructor(){
-
-    }
-
-    // }
+    @Autowired
+    public productDAO: ProductDAO;
+    constructor(){}
 }

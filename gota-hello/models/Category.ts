@@ -1,9 +1,9 @@
 import {Model} from "./Model";
 
 export class Category extends Model {
-    siteId:string;
+    siteId: string;
     name:string;
     avatars:string[];
     children:Category[];
-    order:Number;
+    order: number;
 }

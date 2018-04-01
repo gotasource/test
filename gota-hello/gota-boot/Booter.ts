@@ -76,29 +76,34 @@ export default class Booter {
 
     private static buildMethodWrappers(service: any): Array<FunctionWrapper>{
         let methodWrappers: Array<FunctionWrapper> = [];
-        Object.getOwnPropertyNames(service.constructor.prototype).filter(function (property) {
+        methodWrappers = Object.getOwnPropertyNames(service.constructor.prototype).filter(function (property) {
             return typeof service[property] === 'function' && service[property].toString().indexOf('class')!==0;
-        }).forEach(methodName=> {
-                let methodWrapper = this.buildMethodWrapper(service, methodName);
-                methodWrappers.push(methodWrapper);
-        });
+        }).map(methodName=> {
+                return this.buildMethodWrapper(service, methodName);
+        }).filter(methodWrapper => methodWrapper);
         return methodWrappers;
     }
 
     private static buildMethodWrapper(service: any, methodName:string): FunctionWrapper{
-        let _function: Function = service[methodName];
         let methodMetaData = Reflect.getMetadata(DESIGN_META_DATA.SERVICE_MAPPING, service, methodName);
-        let parameterWrappers: Array<ParameterWrapper> = this.buildParameterWrappers(service, methodName);
+        if(methodMetaData){
+            let _function: Function = service[methodName];
+            let parameterWrappers: Array<ParameterWrapper> = this.buildParameterWrappers(service, methodName);
 
-        let functionWrapper: FunctionWrapper = {
-            function: _function,
-            requestMethod: methodMetaData.requestMethod || REQUEST_METHOD.GET,
-            path: methodMetaData.path,
-            returnType:methodMetaData.returnType,
-            awaitedType: methodMetaData.awaitedType,
-            parameterWrappers: parameterWrappers
+            let functionWrapper: FunctionWrapper;
+            functionWrapper = {
+                function: _function,
+                requestMethod: methodMetaData.requestMethod || REQUEST_METHOD.GET,
+                path: methodMetaData.path,
+                returnType:methodMetaData.returnType,
+                awaitedType: methodMetaData.awaitedType,
+                parameterWrappers: parameterWrappers
+            }
+            return functionWrapper;
+        }else{
+            return undefined;
         }
-        return functionWrapper;
+
     }
 
     private static buildParameterWrappers(service: any, methodName:string): Array<ParameterWrapper>{
@@ -313,6 +318,7 @@ export default class Booter {
 
     private static bootAModel(server: any, servicePath: string, model: any) {
         let dao = new DAO(model);
+        dao.initCollection();
         let modelPath = model.name.replace(/[A-Z]/g, (match, offset, string)=> {
             return (offset ? '-' : '') + match.toLowerCase();
         });

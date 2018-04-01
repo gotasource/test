@@ -1,9 +1,12 @@
 /// <reference path="../models/model.d.ts" />
+import { Collection } from 'mongodb';
 import { Model } from "../models/Model";
 export declare class DAO<T extends Model> {
-    private collection;
-    private vv;
+    private connection;
+    private collectionName;
+    protected collection: Collection;
     constructor(clazz: Function);
+    initCollection(): Promise<void>;
     private cleanNullValue(t);
     private isEmptyObject(t);
     create(t: T): Promise<string>;

@@ -7,4 +7,4 @@ export declare function GotaApp(obj: {
     (target: Function): void;
     (target: Object, propertyKey: string | symbol): void;
 };
-export declare function GotaBoot(appClass: Function): void;
+export declare function GotaBoot(appClass: Function): Promise<void>;

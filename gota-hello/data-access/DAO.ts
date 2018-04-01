@@ -8,26 +8,30 @@ import {Collection, ObjectId, Binary } from 'mongodb';
 import {Model} from "../models/Model";
 import {isUndefined} from "util";
 import {create} from "domain";
+import {Autowired, PostInit} from "../gota-service";
 
-let createCollection = async function(dao, collectionName){
-    dao.collection = await Connection.createCollection(collectionName);
-}
+let CollectionsBull
 export class DAO<T extends Model> {
-    private collection: Collection;
-    private vv: Binary;
-    constructor(clazz: Function){
-        let collectionName = clazz.name.replace(/[A-Z]/g, (match, offset, string)=> {
+    @Autowired
+    private connection: Connection;
+    private collectionName: string;
+    protected collection: Collection;
+    constructor(clazz: Function) {
+        this.collectionName = clazz.name.replace(/[A-Z]/g, (match, offset, string) => {
             return (offset ? '_' : '') + match.toLowerCase();
         });
-        Connection.createCollection(collectionName).then(result =>{
-            this.collection = result
-        }).catch((err) => {
-            throw err
-        });
     }
-    // get collection():Collection{
-    //     return Connection.getDataBase().collection(this.collectionName);
-    // }
+
+    @PostInit
+    public async initCollection(): Promise<void>{
+        try {
+            this.collection = await this.connection.createCollection(this.collectionName);
+            console.log(`Created Collection: ${this.collectionName}`);
+        }catch(err ){
+            console.log(`Create Collection: ${this.collectionName} is Failed.`);
+            throw err;
+        }
+    }
 
     private cleanNullValue(t: Object):object{
         let result={};

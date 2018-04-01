@@ -7,6 +7,7 @@ const DESIGN_META_DATA = {
     APP : 'design:meta:data:key:app',
     CONFIG : 'design:meta:data:key:config',
     POST_INIT : 'design:meta:data:key:post.init',
+    AUTOWIRED : 'design:meta:data:key:autowired',
     SERVICE : 'design:meta:data:key:service',
     SERVICE_MAPPING : 'design:meta:data:key:service:mapping',
     PATH : 'design:meta:data:key:path',
@@ -40,6 +41,7 @@ export class RequestMethod{
     static  DELETE = 'DELETE';
 }
 
+let autowiredContext = {};
 export function Service(mapping:{ name?: string, path: string | Array<string>, config?:object, models?: Array<any>}) {
 	return function(... args : any[]): void {
         // let serviceName = mapping.name;
@@ -69,7 +71,7 @@ export function Config(configKey?:string) {
 
         // property getter
          let getter = function () {
-            let config  = Reflect.getMetadata(DESIGN_META_DATA.CONFIG, target);
+            let config  = Reflect.getMetadata(DESIGN_META_DATA.CONFIG, target.constructor);
             if(!config){
 				console.log('\n'+`Config "${property}" of ${target.name} has not initiated.`);
 				console.log(`Please check class ${target.name} and config into scanner App.`+'\n');
@@ -109,8 +111,18 @@ export function Config(configKey?:string) {
 }
 
 export function Autowired(target : any, property : string) {
+    let autowiredPropertyNames: Array<Object> = Reflect.getMetadata(DESIGN_META_DATA.AUTOWIRED, target) || [];
+    autowiredPropertyNames.push(property);
+    Reflect.defineMetadata(DESIGN_META_DATA.AUTOWIRED, autowiredPropertyNames, target);
+
+    autowiredContext
     var t = Reflect.getMetadata("design:typeinfo", target, property).type();
-    let obj = new t();
+    let obj = autowiredContext[t.name];
+    if(!(obj instanceof t)){
+        obj = new t();
+        autowiredContext[t.name] = obj;
+    }
+
     var getter = function () {
         return obj;
     };
@@ -134,9 +146,9 @@ export function Autowired(target : any, property : string) {
 
 
 export function PostInit(target : any, methodName : string) {
-    let initMethodNames: Array<Object> = Reflect.getOwnMetadata(DESIGN_META_DATA.POST_INIT, target) || [];
-    initMethodNames.push(methodName);
-    Reflect.defineMetadata(DESIGN_META_DATA.POST_INIT, initMethodNames, target);
+    let postInitMethodNames: Array<Object> = Reflect.getMetadata(DESIGN_META_DATA.POST_INIT, target) || [];
+    postInitMethodNames.push(methodName);
+    Reflect.defineMetadata(DESIGN_META_DATA.POST_INIT, postInitMethodNames, target);
 }
 
 export function ServiceMapping(mapping:{name?: string, path : string | Array<string>, requestMethod?: string | Array<string>} ) {

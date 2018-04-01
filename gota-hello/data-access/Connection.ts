@@ -7,41 +7,35 @@ function delay(ms: number) {
 
 class Connection {
     @Config('database')
-    private static databaseConfig: any;
-    private static mongoClient: MongoClient;
-    public static db: Db;
+    private databaseConfig: any;
+    private mongoClient: MongoClient;
+    private static db: Db;
     constructor(){}
-
     @PostInit
-    public open1():Db{
-
-        return Connection.db;
-    }
-    public static async open():Promise<Db>{
+    protected async open():Promise<void>{
         if(!Connection.db){
-            while(!Connection.databaseConfig){
-                await delay(1000);
-            }
+            // while(!Connection.databaseConfig){
+            //     await delay(1000);
+            // }
             let host = this.databaseConfig.host;
             let port = this.databaseConfig.port;
             let databaseName = this.databaseConfig.databaseName;
             let url = `mongodb://${host}:${port}/`;
             try{
-                Connection.mongoClient = await MongoClient.connect(url);
-                Connection.db = Connection.mongoClient.db(databaseName);
+                this.mongoClient = await MongoClient.connect(url);
+                Connection.db = this.mongoClient.db(databaseName);
             }catch (err){
-                console.log("createConnection is Failed.\nPlease check database config: \n" + JSON.stringify(Connection.databaseConfig, null, 4));
+                console.log("Create Connection is Failed.\nPlease check database config: \n" + JSON.stringify(this.databaseConfig, null, 4));
                 throw err;
             }
         }
-        return Connection.db;
     }
 
-    public static async createCollection(collectionName:string):Promise<Collection>{
-        Connection.open();
-        while(!Connection.db){
-            await delay(1000);
-        }
+    public async createCollection(collectionName:string):Promise<Collection>{
+        // this.open();
+        // while(!Connection.db){
+        //     await delay(1000);
+        // }
         try{
             let collection:Collection = Connection.db.collection(collectionName);
             return collection;

@@ -1,4 +1,7 @@
-import {QueryParameter, HeadersParameter, RequestMethod, Service, ServiceMapping, Config, Autowired, PathParameter, Body} from '../gota-service';
+import {
+    QueryParameter, HeadersParameter, RequestMethod, Service, ServiceMapping, Config, Autowired, PathParameter,
+    Body, PostInit
+} from '../gota-service';
 import {SiteInfo} from "../models/SiteInfo";
 import {SiteInfoDAO} from "../data-access/SiteInfoDAO";
 import {URL} from "url";
@@ -10,6 +13,7 @@ export class SiteInfoService{
     constructor(){
 
     }
+
     @ServiceMapping({path:'/site-info/:id', requestMethod:RequestMethod.GET})
     async getSiteInfo(@HeadersParameter referer: String, @PathParameter id: String): Promise<SiteInfo>{
         let siteInfo = new SiteInfo({});
