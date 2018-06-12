@@ -5,7 +5,7 @@
 # Create A Service Class
 
 ## Class Mapping
-We use decorator *Service* before a class
+We use decorator *Service* before a class.
 Interface API:
 ```javascript
  function Service(mapping: {
