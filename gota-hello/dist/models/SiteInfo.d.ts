@@ -1,4 +1,4 @@
-import { Model } from "./Model";
+import { Model } from "../gota-dao/Model";
 export declare class SiteInfo extends Model {
     name: string;
     phones: Array<string>;

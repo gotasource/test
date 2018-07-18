@@ -1,5 +1,5 @@
 
-import {QueryParameter, RequestMethod, Service, ServiceMapping, Config} from "../gota-service";
+import {QueryParameter, RequestMethod, Service, ServiceMapping} from '../gota-service';
 
 function timeout(ms:number) {
     return new Promise(resolve => setTimeout(resolve, ms));

@@ -59,7 +59,7 @@ export function Service(mapping:{ name?: string, path: string | Array<string>, c
 	    Reflect.defineMetadata(DESIGN_META_DATA.SERVICE, serviceWrapper, args[0]);
 	}
 }
-
+/* move to injection
 export function Config(configKey?:string) {
     return function(target: any, property: string): void {
         if(!configKey){
@@ -70,7 +70,7 @@ export function Config(configKey?:string) {
         // var _val = target[property];
 
         // property getter
-         let getter = function () {
+        let getter = function () {
             let config  = Reflect.getMetadata(DESIGN_META_DATA.CONFIG, target.constructor);
             if(!config){
 				console.log('\n'+`Config "${property}" of ${target.name} has not initiated.`);
@@ -109,25 +109,25 @@ export function Config(configKey?:string) {
         }
     }
 }
-
+*/
+/* move to injection
 export function Autowired(target : any, property : string) {
     let autowiredPropertyNames: Array<Object> = Reflect.getMetadata(DESIGN_META_DATA.AUTOWIRED, target) || [];
     autowiredPropertyNames.push(property);
     Reflect.defineMetadata(DESIGN_META_DATA.AUTOWIRED, autowiredPropertyNames, target);
 
-    autowiredContext
-    var t = Reflect.getMetadata("design:typeinfo", target, property).type();
+    let t: any = Reflect.getMetadata("design:typeinfo", target, property).type();
     let obj = autowiredContext[t.name];
     if(!(obj instanceof t)){
         obj = new t();
         autowiredContext[t.name] = obj;
     }
 
-    var getter = function () {
+    let getter = function () {
         return obj;
     };
     // property setter
-    var setter = function (newVal: any) {
+    let setter = function (newVal: any) {
         throw Error('Can not change config value');
     };
 
@@ -144,12 +144,14 @@ export function Autowired(target : any, property : string) {
     }
 }
 
+*/
 
-export function PostInit(target : any, methodName : string) {
-    let postInitMethodNames: Array<Object> = Reflect.getMetadata(DESIGN_META_DATA.POST_INIT, target) || [];
-    postInitMethodNames.push(methodName);
-    Reflect.defineMetadata(DESIGN_META_DATA.POST_INIT, postInitMethodNames, target);
-}
+// move to gota core
+// export function PostInit(target : any, methodName : string) {
+//     let postInitMethodNames: Array<Object> = Reflect.getMetadata(DESIGN_META_DATA.POST_INIT, target) || [];
+//     postInitMethodNames.push(methodName);
+//     Reflect.defineMetadata(DESIGN_META_DATA.POST_INIT, postInitMethodNames, target);
+// }
 
 export function ServiceMapping(mapping:{name?: string, path : string | Array<string>, requestMethod?: string | Array<string>} ) {
     return function(... args : any[]): void {
@@ -173,6 +175,19 @@ export function ServiceMapping(mapping:{name?: string, path : string | Array<str
 
     //return Reflect.metadata(DESIGN_META_DATA.SERVICE_MAPPING, functionWrapper);
 }
+// move to gota core
+// export function AwaitedType(clazz:Function|string) {
+//     return function(... args : any[]): void {
+//         let typeInfo = Reflect.getMetadata("design:typeinfo", args[0], args[1]);
+//         typeInfo.awaitedType = clazz;
+//         Reflect.defineMetadata("design:typeinfo", typeInfo, args[0], args[1]);
+//     }
+//
+//
+//
+//
+//     //return Reflect.metadata(DESIGN_META_DATA.SERVICE_MAPPING, functionWrapper);
+// }
 
 //https://blogs.msdn.microsoft.com/typescript/2015/04/30/announcing-typescript-1-5-beta/
 //http://blog.wolksoftware.com/decorators-metadata-reflection-in-typescript-from-novice-to-expert-part-3

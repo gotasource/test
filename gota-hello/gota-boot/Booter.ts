@@ -1,5 +1,5 @@
 import "reflect-metadata";
-import {DAO} from "../data-access/DAO";
+import {DAO} from "../gota-dao/index";
 
 const DESIGN_META_DATA = {
     APP : 'design:meta:data:key:app',
@@ -252,7 +252,7 @@ export default class Booter {
     private static buildAOptionSummary(url:string, object:any){
         let returnObject = {url:url};
         Object.keys(object).forEach(key =>{
-            let responseType:any = object[key]['awaitedType'] || object[key]['returnType'] || function(){return String};
+            let responseType:any = object[key]['awaitedType'] || object[key]['returnType'] || 'String';
             let requestData:{path?: object[], headers?: object[], query?: object[], body?: any[]} = {};
             object[key]['requestInformation'].forEach(item => {
                 switch (item.designMetaData){
@@ -277,7 +277,7 @@ export default class Booter {
             returnObject[key] =
                 {
                     requestData:requestData,
-                    responseType:responseType().name
+                    responseType: responseType.name || responseType
                 }
         });
         return returnObject;
@@ -297,8 +297,6 @@ export default class Booter {
     }
 
     /////////////////////////////
-
-
 
     public static bootService(server: any, service: any) {
         let serviceWrapper: ServiceWrapper = Booter.buildServiceWrapper(service);
@@ -341,8 +339,34 @@ export default class Booter {
             type: Object
         }
 
+    let unUnitName = function (str: string): string{
+        var re = new RegExp(/./g)
+        str = str.toLowerCase();
+        str = str.replace(/!|@|%|\^|\*|\(|\)|\+|\=|\<|\>|\?|\/|,|\.|\:|\;|\'|\"|\&|\#|\[|\]|~|\$|_|`|-|{|}|\||\\/g," ");
+        str = str.replace(/a|à|á|ạ|ả|ã|â|ầ|ấ|ậ|ẩ|ẫ|ă|ằ|ắ|ặ|ẳ|ẵ/g,'(a|à|á|ạ|ả|ã|â|ầ|ấ|ậ|ẩ|ẫ|ă|ằ|ắ|ặ|ẳ|ẵ)');
+        str = str.replace(/e|è|é|ẹ|ẻ|ẽ|ê|ề|ế|ệ|ể|ễ/g,'(e|è|é|ẹ|ẻ|ẽ|ê|ề|ế|ệ|ể|ễ)');
+        str = str.replace(/i|ì|í|ị|ỉ|ĩ/g,'(i|ì|í|ị|ỉ|ĩ)');
+        str = str.replace(/o|ò|ó|ọ|ỏ|õ|ô|ồ|ố|ộ|ổ|ỗ|ơ|ờ|ớ|ợ|ở|ỡ/g,'(o|ò|ó|ọ|ỏ|õ|ô|ồ|ố|ộ|ổ|ỗ|ơ|ờ|ớ|ợ|ở|ỡ)');
+        str = str.replace(/u|ù|ú|ụ|ủ|ũ|ư|ừ|ứ|ự|ử|ữ/g,'(u|ù|ú|ụ|ủ|ũ|ư|ừ|ứ|ự|ử|ữ)');
+        str = str.replace(/y|ỳ|ý|ỵ|ỷ|ỹ/g,'(y|ỳ|ý|ỵ|ỷ|ỹ)');
+        str = str.replace(/d|đ/g,'(d|đ)');
+
+        str = str.trim();
+        str = str.replace(/ +/g,"(.*)");
+        return str;
+        }
+
         let executes = {
             search: async function (query){
+                Object.keys(query).forEach(key => {
+                    if(query[key].startsWith('$regex:')){
+                        let regexValue = query[key].substring('$regex:'.length).trim();
+                        regexValue = unUnitName(regexValue);
+                        query[key] = {
+                            $regex:new RegExp(regexValue, 'i')
+                        }
+                    }
+                });
                 let t = await dao.search(query);
                 return t;
             },

@@ -2,7 +2,7 @@
 import {GotaApp, GotaBoot} from "./gota-boot";
 //import {SiteInfo} from "./models/SiteInfo";
 import {SiteInfoService} from "./service/SiteInfoService";
-import {Connection} from "./data-access/Connection";
+import {Connection} from "./gota-dao/Connection";
 import {ProductService} from "./service/ProductService";
 
 // @GotaApp({
@@ -36,7 +36,7 @@ import {ProductService} from "./service/ProductService";
 })
 class SiteInfoApp{};
 GotaBoot(SiteInfoApp);
-
+/*
 @GotaApp({
     scanner: [ProductService, Connection],
     config: {
@@ -53,3 +53,4 @@ GotaBoot(SiteInfoApp);
 })
 class ProductApp{};
 GotaBoot(ProductApp);
+*/

@@ -1,4 +1,4 @@
-import { Model } from "./Model";
+import { Model } from "../gota-dao/Model";
 export declare class Category extends Model {
     siteId: string;
     name: string;

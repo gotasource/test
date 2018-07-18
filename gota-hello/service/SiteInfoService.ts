@@ -1,13 +1,16 @@
 import {
-    QueryParameter, HeadersParameter, RequestMethod, Service, ServiceMapping, Config, Autowired, PathParameter,
-    Body, PostInit
+    QueryParameter, HeadersParameter, RequestMethod, Service, ServiceMapping, PathParameter,
+    Body,
 } from '../gota-service';
+import {Config, Autowired} from '../gota-injection';
+import {PostInit} from '../gota-core';
 import {SiteInfo} from "../models/SiteInfo";
 import {SiteInfoDAO} from "../data-access/SiteInfoDAO";
 import {URL} from "url";
 
 @Service({path:'/site-service', models:[SiteInfo]})
 export class SiteInfoService{
+
     @Autowired
     public siteInfoDAO: SiteInfoDAO;
     constructor(){

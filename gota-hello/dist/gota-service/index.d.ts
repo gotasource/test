@@ -13,9 +13,6 @@ export declare function Service(mapping: {
     config?: object;
     models?: Array<any>;
 }): (...args: any[]) => void;
-export declare function Config(configKey?: string): (target: any, property: string) => void;
-export declare function Autowired(target: any, property: string): void;
-export declare function PostInit(target: any, methodName: string): void;
 export declare function ServiceMapping(mapping: {
     name?: string;
     path: string | Array<string>;
