@@ -48,9 +48,8 @@ function initConfig(serviceClasses: Array<any>, config: object): Array<any>{
         let serviceMetaData = Reflect.getMetadata(DESIGN_META_DATA.SERVICE, serviceClass);
         let serviceConfig = Object.assign({},config, serviceMetaData? serviceMetaData.config: undefined);
         Reflect.defineMetadata(DESIGN_META_DATA.CONFIG, serviceConfig, serviceClass);
-        if(serviceMetaData){
-            serviceTargets.push(new serviceClass());
-        }
+        serviceTargets.push(new serviceClass());
+
     });
     return serviceTargets;
 }
@@ -101,10 +100,13 @@ export async function GotaBoot(appClass: Function) {
 
     serviceTargets.forEach(serviceTarget => {
 
-        //let serviceMetaData = Reflect.getMetadata(DESIGN_META_DATA.SERVICE, serviceTarget.constructor);
+        let serviceMetaData = Reflect.getMetadata(DESIGN_META_DATA.SERVICE, serviceTarget.constructor);
         //let models = serviceMetaData.models;
         // Booter.bootModels(app, serviceMetaData.path, models);
-        Booter.bootService(app, serviceTarget);
+        if(serviceMetaData){
+            Booter.bootService(app, serviceTarget);
+        }
+
     });
 
 	app.listen(config.port, config.hostName,function () {

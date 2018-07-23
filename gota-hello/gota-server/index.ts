@@ -164,7 +164,7 @@ export default class GotaServer{
     private server: Server;
     constructor(){
         this.mapping = {
-            abc:{
+            /*abc:{
                 POST:{
                     args:[
                         {
@@ -269,7 +269,7 @@ export default class GotaServer{
                     },
                     context:null
                 }
-            }
+            }*/
         };
 
 

@@ -1,8 +1,4 @@
-export declare class User {
-    private lastName;
-    private firstName;
-    constructor(firstName: string, lastName: string);
-}
+import { User } from "../models/User";
 export declare class UserService {
     constructor();
     readCategory(lastName: string, firstName: string): User;

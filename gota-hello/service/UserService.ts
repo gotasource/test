@@ -1,5 +1,6 @@
 
 import {QueryParameter, RequestMethod, Service, ServiceMapping} from '../gota-service';
+import {User} from "../models/User";
 
 function timeout(ms:number) {
     return new Promise(resolve => setTimeout(resolve, ms));
@@ -8,25 +9,15 @@ async function sleep(fn:Function, args:Array<string>) {
     await timeout(3000);
     return fn(...args);
 }
-export class User{
 
-    private lastName:string;
-    private firstName:string;
-    constructor(firstName: string, lastName: string){
-        this. lastName = lastName;
-        this.firstName = firstName;
-    }
-
-}
-
-@Service({path:'/user-service'})
+@Service({path:'/user-service', models: [User]})
 export class UserService{
     constructor(){
     }
 
     @ServiceMapping({path:['/hi','/hii']})
     readCategory(@QueryParameter lastName:string, @QueryParameter firstName:string): User{
-        let user = new User(firstName, lastName);
+        let user = new User(firstName, lastName, null);
         return user;
     }
 

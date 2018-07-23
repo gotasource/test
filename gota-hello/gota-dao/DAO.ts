@@ -68,8 +68,10 @@ export class DAO<T extends Model> {
             if(err.code = 11000 && err.message.includes(' index: _id_ dup key: {')){//E11000 duplicate key error
                 if(!isNaN(t._id as any)){
                     t._id = String(Number(t._id)+1);
+                }else{
+                    t._id = undefined;
                 }
-                t._id = undefined;
+
                 return await this.create(t);
             }else{
                 console.log('Creating is Fail: %s', JSON.stringify(err, null, 4));

@@ -215,7 +215,7 @@ export default class Booter {
 
     private static bootCollectionService(server: any, collectionService: Array<ServiceInformation>):void{
         collectionService.forEach(serviceInformation => {
-            let config : any = Reflect.getMetadata(DESIGN_META_DATA.CONFIG, serviceInformation.service.constructor);
+            //let config : any = Reflect.getMetadata(DESIGN_META_DATA.CONFIG, serviceInformation.service.constructor);
             // if(config.devMode){
             //     console.log('Apply method "%s" for url: "%s"', serviceInformation.requestMethod, serviceInformation.path);
             // }
@@ -390,7 +390,13 @@ export default class Booter {
                 // if(query && Object.keys(query).find(key => query[key] == '$')){
                 //     result = await dao.createChild(query, body);
                 // }else {
-                let _id = await dao.create(body);
+                let _id;
+                if(Array.isArray(body)){
+                    _id = await dao.createMany(body);
+                }else{
+                    _id = await dao.create(body);
+                }
+
                 //}
 
                 return {_id: _id};
@@ -448,7 +454,7 @@ export default class Booter {
         }
 
         let updateMany = {
-            requestMethod:  REQUEST_METHOD.POST,
+            requestMethod:  REQUEST_METHOD.PATCH,
             path:`${servicePath}/${modelPath}`,
             returnType: Promise,
             awaitedType: `Array<${model.constructor.name}>`,
@@ -477,17 +483,17 @@ export default class Booter {
             function: executes.createChild
         }
 
-        let update = {
-            requestMethod:  REQUEST_METHOD.PUT,
-            path:`${servicePath}/${modelPath}/:id`,
-            returnType: Promise,
-            awaitedType: `Array<${model.constructor.name}>`,
-            requestInformation: [idPathParameter, queryParameter, bodyParameter],
-            service: null,
-            function:executes.update
-        }
+        // let update = {
+        //     requestMethod:  REQUEST_METHOD.PUT,
+        //     path:`${servicePath}/${modelPath}/:id`,
+        //     returnType: Promise,
+        //     awaitedType: `Array<${model.constructor.name}>`,
+        //     requestInformation: [idPathParameter, queryParameter, bodyParameter],
+        //     service: null,
+        //     function:executes.update
+        // }
 
-        let update1 = {
+        let update = {
             requestMethod:  REQUEST_METHOD.PATCH,
             path:`${servicePath}/${modelPath}/:id`,
             returnType: Promise,
@@ -507,7 +513,7 @@ export default class Booter {
             function:executes.delete
         }
 
-        return [search, create, updateMany, read, createChild, update, update1, _delete];
+        return [search, create, updateMany, read, createChild, update, _delete];
         //server.addMapping(`${servicePath}/${modelPath}`,  REQUEST_METHOD.GET, [queryParameter],  executes.search);
         //server.addMapping(`${servicePath}/${modelPath}`,  REQUEST_METHOD.POST, [bodyParameter], executes.create);
 
