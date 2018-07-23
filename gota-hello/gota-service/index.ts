@@ -41,7 +41,7 @@ export class RequestMethod{
     static  DELETE = 'DELETE';
 }
 
-let autowiredContext = {};
+
 export function Service(mapping:{ name?: string, path: string | Array<string>, config?:object, models?: Array<any>}) {
 	return function(... args : any[]): void {
         // let serviceName = mapping.name;
@@ -117,10 +117,10 @@ export function Autowired(target : any, property : string) {
     Reflect.defineMetadata(DESIGN_META_DATA.AUTOWIRED, autowiredPropertyNames, target);
 
     let t: any = Reflect.getMetadata("design:typeinfo", target, property).type();
-    let obj = autowiredContext[t.name];
+    let obj = beanContext[t.name];
     if(!(obj instanceof t)){
         obj = new t();
-        autowiredContext[t.name] = obj;
+        beanContext[t.name] = obj;
     }
 
     let getter = function () {

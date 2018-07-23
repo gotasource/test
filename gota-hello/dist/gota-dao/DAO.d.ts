@@ -7,10 +7,10 @@ export declare class DAO<T extends Model> {
     protected collection: Collection;
     constructor(clazz: Function);
     initCollection(): Promise<void>;
-    private cleanNullValue;
-    private isEmptyObject;
+    private cleanNullValue(t);
+    private isEmptyObject(t);
     create(t: T): Promise<string>;
-    createChild(parentId: string, childProperty: string, child: Object): Promise<string>;
+    createChild(parentId: string, childProperty: string, child: Object): Promise<boolean>;
     read(id: string): Promise<T>;
     update(id: string, updatingProperties: Object): Promise<boolean>;
     updateChild(parentId: string, childProperty: string, childQuery: Object, updatingProperties: Object): Promise<boolean>;

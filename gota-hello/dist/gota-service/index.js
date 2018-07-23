@@ -39,7 +39,6 @@ RequestMethod.PUT = 'PUT';
 RequestMethod.PATCH = 'PATCH';
 RequestMethod.DELETE = 'DELETE';
 exports.RequestMethod = RequestMethod;
-let autowiredContext = {};
 function Service(mapping) {
     return function (...args) {
         let serviceWrapper = Object.assign({ name: args[0].name }, mapping);

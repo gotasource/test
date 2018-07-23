@@ -9,11 +9,16 @@ import {Product} from "../models/Product";
 import {ProductDAO} from "../data-access/ProductDAO";
 import {Connection} from "../gota-dao/Connection";
 
-@Service({path:'/product-service', models:[Category, Product]})
+@Service({path:'/product-service' /*,models:[Category, Product]*/})
 export class ProductService{
     @Autowired
     public categoryDAO: CategoryDAO;
     @Autowired
     public productDAO: ProductDAO;
     constructor(){}
+
+    @ServiceMapping({path:'/products', requestMethod:RequestMethod.GET})
+    getProducts(){
+       // let products: Product = this.productDAO.
+    }
 }

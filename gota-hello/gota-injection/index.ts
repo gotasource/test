@@ -30,7 +30,15 @@ const REQUEST_METHOD = {
     DELETE : 'DELETE'
 };
 
-let autowiredContext = {};
+class BeanContext {
+    private static beans:object = {}
+    public static  setBean(name: string, value: any):void{
+        this.beans[name] = value;
+    }
+    public static getBean(name:string): any{
+        return this.beans[name];
+    }
+}
 
 export function Config(configKey?:string) {
     return function(target: any, property: string): void {
@@ -88,10 +96,10 @@ export function Autowired(target : any, property : string) {
     Reflect.defineMetadata(DESIGN_META_DATA.AUTOWIRED, autowiredPropertyNames, target);
 
     let t: any = Reflect.getMetadata("design:typeinfo", target, property).type();
-    let obj = autowiredContext[t.name];
+    let obj = BeanContext.getBean(t.name);
     if(!(obj instanceof t)){
         obj = new t();
-        autowiredContext[t.name] = obj;
+        BeanContext.setBean(t.name, obj);
     }
 
     let getter = function () {
@@ -114,3 +122,5 @@ export function Autowired(target : any, property : string) {
         });
     }
 }
+
+// export { BeanContext }

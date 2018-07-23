@@ -30,12 +30,10 @@ class Connection {
     open() {
         return __awaiter(this, void 0, void 0, function* () {
             if (!Connection.db) {
-                let host = this.databaseConfig.host;
-                let port = this.databaseConfig.port;
                 let databaseName = this.databaseConfig.databaseName;
-                let url = `mongodb://${host}:${port}/`;
+                let url = this.databaseConfig.url || `mongodb://${this.databaseConfig.host}:${this.databaseConfig.port}/`;
                 try {
-                    this.mongoClient = yield mongodb_1.MongoClient.connect(url);
+                    this.mongoClient = yield mongodb_1.MongoClient.connect(url, { useNewUrlParser: true });
                     Connection.db = this.mongoClient.db(databaseName);
                 }
                 catch (err) {

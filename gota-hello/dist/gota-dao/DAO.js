@@ -21,7 +21,6 @@ const Connection_1 = require("./Connection");
 const mongodb_1 = require("mongodb");
 const index_1 = require("../gota-injection/index");
 const index_2 = require("../gota-core/index");
-let CollectionsBull;
 class DAO {
     constructor(clazz) {
         this.collectionName = clazz.name.replace(/[A-Z]/g, (match, offset, string) => {
@@ -97,7 +96,7 @@ class DAO {
                 console.log('Updating Many is Fail: %s', JSON.stringify(err, null, 4));
                 throw err;
             }
-            return result.result;
+            return result.result.ok === 1;
         });
     }
     ;

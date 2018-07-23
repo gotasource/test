@@ -19,12 +19,12 @@ class Connection {
             // while(!Connection.databaseConfig){
             //     await delay(1000);
             // }
-            let host = this.databaseConfig.host;
-            let port = this.databaseConfig.port;
+            //let host = this.databaseConfig.host;
+            //let port = this.databaseConfig.port;
             let databaseName = this.databaseConfig.databaseName;
-            let url = `mongodb://${host}:${port}/`;
+            let url = this.databaseConfig.url || `mongodb://${this.databaseConfig.host}:${this.databaseConfig.port}/`;
             try{
-                this.mongoClient = await MongoClient.connect(url);
+                this.mongoClient = await MongoClient.connect(url, { useNewUrlParser: true });
                 Connection.db = this.mongoClient.db(databaseName);
             }catch (err){
                 console.log("Create Connection is Failed.\nPlease check database config: \n" + JSON.stringify(this.databaseConfig, null, 4));

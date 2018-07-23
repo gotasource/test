@@ -12,11 +12,11 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const gota_service_1 = require("../gota-service");
 const gota_injection_1 = require("../gota-injection");
 const CategoryDAO_1 = require("../data-access/CategoryDAO");
-const Category_1 = require("../models/Category");
-const Product_1 = require("../models/Product");
 const ProductDAO_1 = require("../data-access/ProductDAO");
 let ProductService = class ProductService {
     constructor() { }
+    getProducts() {
+    }
 };
 __decorate([
     gota_injection_1.Autowired,
@@ -30,8 +30,16 @@ __decorate([
         type: () => ProductDAO_1.ProductDAO
     })
 ], ProductService.prototype, "productDAO", void 0);
+__decorate([
+    gota_service_1.ServiceMapping({ path: '/products', requestMethod: gota_service_1.RequestMethod.GET }),
+    __metadata("design:typeinfo", {
+        type: () => Function,
+        paramTypes: () => [],
+        returnType: () => void 0
+    })
+], ProductService.prototype, "getProducts", null);
 ProductService = __decorate([
-    gota_service_1.Service({ path: '/product-service', models: [Category_1.Category, Product_1.Product] }),
+    gota_service_1.Service({ path: '/product-service' }),
     __metadata("design:typeinfo", {
         paramTypes: () => []
     })

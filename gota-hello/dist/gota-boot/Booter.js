@@ -249,18 +249,25 @@ class Booter {
         });
     }
     static bootService(server, service) {
+        let serviceMetaData = Reflect.getMetadata(DESIGN_META_DATA.SERVICE, service.constructor);
+        let models = serviceMetaData.models;
+        let modelServiceInformationList = Booter.collectModelsServiceInformation(serviceMetaData.path, models);
         let serviceWrapper = Booter.buildServiceWrapper(service);
         let serviceInformationList = Booter.collectServiceInformation(serviceWrapper);
+        serviceInformationList.push(...modelServiceInformationList);
         let optionServiceInformationList = Booter.collectOptionsServiceInformation(serviceInformationList);
         Booter.bootCollectionService(server, serviceInformationList);
         Booter.bootSummaryService(server, serviceWrapper.path, optionServiceInformationList);
     }
-    static bootModels(server, servicePath, models) {
+    static collectModelsServiceInformation(servicePath, models = []) {
+        let serviceInformation = [];
         models.forEach(model => {
-            Booter.bootAModel(server, servicePath, model);
+            let service = Booter.collectAModelServiceInformation(servicePath, model);
+            serviceInformation.push(...service);
         });
+        return serviceInformation;
     }
-    static bootAModel(server, servicePath, model) {
+    static collectAModelServiceInformation(servicePath, model) {
         let dao = new index_1.DAO(model);
         dao.initCollection();
         let modelPath = model.name.replace(/[A-Z]/g, (match, offset, string) => {
@@ -355,7 +362,6 @@ class Booter {
                     return { result: result };
                 });
             },
-            options: () => { return { ok: 1 }; },
             updateMany: function (query, body) {
                 return __awaiter(this, void 0, void 0, function* () {
                     let result = yield dao.updateMany(query, body);
@@ -363,16 +369,79 @@ class Booter {
                 });
             },
         };
-        server.addMapping(`${servicePath}/${modelPath}`, REQUEST_METHOD.OPTIONS, [], executes.options);
-        server.addMapping(`${servicePath}/${modelPath}`, REQUEST_METHOD.GET, [queryParameter], executes.search);
-        server.addMapping(`${servicePath}/${modelPath}`, REQUEST_METHOD.POST, [bodyParameter], executes.create);
-        server.addMapping(`${servicePath}/${modelPath}`, REQUEST_METHOD.PATCH, [queryParameter, bodyParameter], executes.updateMany);
-        server.addMapping(`${servicePath}/${modelPath}/:id`, REQUEST_METHOD.OPTIONS, [], executes.options);
-        server.addMapping(`${servicePath}/${modelPath}/:id`, REQUEST_METHOD.GET, [idPathParameter], executes.read);
-        server.addMapping(`${servicePath}/${modelPath}/:id`, REQUEST_METHOD.POST, [idPathParameter, queryParameter, bodyParameter], executes.createChild);
-        server.addMapping(`${servicePath}/${modelPath}/:id`, REQUEST_METHOD.PUT, [idPathParameter, queryParameter, bodyParameter], executes.update);
-        server.addMapping(`${servicePath}/${modelPath}/:id`, REQUEST_METHOD.PATCH, [idPathParameter, queryParameter, bodyParameter], executes.update);
-        server.addMapping(`${servicePath}/${modelPath}/:id`, REQUEST_METHOD.DELETE, [idPathParameter], executes.delete);
+        let search = {
+            requestMethod: REQUEST_METHOD.GET,
+            path: `${servicePath}/${modelPath}`,
+            returnType: Promise,
+            awaitedType: `Array<${model.constructor.name}>`,
+            requestInformation: [queryParameter],
+            service: null,
+            function: executes.search
+        };
+        let create = {
+            requestMethod: REQUEST_METHOD.POST,
+            path: `${servicePath}/${modelPath}`,
+            returnType: Promise,
+            awaitedType: model.constructor.name,
+            requestInformation: [bodyParameter],
+            service: null,
+            function: executes.create
+        };
+        let updateMany = {
+            requestMethod: REQUEST_METHOD.POST,
+            path: `${servicePath}/${modelPath}`,
+            returnType: Promise,
+            awaitedType: `Array<${model.constructor.name}>`,
+            requestInformation: [bodyParameter],
+            service: null,
+            function: executes.updateMany
+        };
+        let read = {
+            requestMethod: REQUEST_METHOD.GET,
+            path: `${servicePath}/${modelPath}/:id`,
+            returnType: Promise,
+            awaitedType: `Array<${model.constructor.name}>`,
+            requestInformation: [idPathParameter],
+            service: null,
+            function: executes.read
+        };
+        let createChild = {
+            requestMethod: REQUEST_METHOD.POST,
+            path: `${servicePath}/${modelPath}/:id`,
+            returnType: Promise,
+            awaitedType: `Array<${model.constructor.name}>`,
+            requestInformation: [idPathParameter, queryParameter, bodyParameter],
+            service: null,
+            function: executes.createChild
+        };
+        let update = {
+            requestMethod: REQUEST_METHOD.PUT,
+            path: `${servicePath}/${modelPath}/:id`,
+            returnType: Promise,
+            awaitedType: `Array<${model.constructor.name}>`,
+            requestInformation: [idPathParameter, queryParameter, bodyParameter],
+            service: null,
+            function: executes.update
+        };
+        let update1 = {
+            requestMethod: REQUEST_METHOD.PATCH,
+            path: `${servicePath}/${modelPath}/:id`,
+            returnType: Promise,
+            awaitedType: `Array<${model.constructor.name}>`,
+            requestInformation: [idPathParameter, queryParameter, bodyParameter],
+            service: null,
+            function: executes.update
+        };
+        let _delete = {
+            requestMethod: REQUEST_METHOD.DELETE,
+            path: `${servicePath}/${modelPath}/:id`,
+            returnType: Promise,
+            awaitedType: `Array<${model.constructor.name}>`,
+            requestInformation: [idPathParameter],
+            service: null,
+            function: executes.delete
+        };
+        return [search, create, updateMany, read, createChild, update, update1, _delete];
     }
 }
 exports.default = Booter;

@@ -13,10 +13,7 @@ export class SiteInfoService{
 
     @Autowired
     public siteInfoDAO: SiteInfoDAO;
-    constructor(){
-
-    }
-
+    constructor(){ }
     @ServiceMapping({path:'/site-info/:id', requestMethod:RequestMethod.GET})
     async getSiteInfo(@HeadersParameter referer: String, @PathParameter id: String): Promise<SiteInfo>{
         let siteInfo = new SiteInfo({});

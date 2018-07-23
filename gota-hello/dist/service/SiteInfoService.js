@@ -26,8 +26,7 @@ const gota_core_1 = require("../gota-core");
 const SiteInfo_1 = require("../models/SiteInfo");
 const SiteInfoDAO_1 = require("../data-access/SiteInfoDAO");
 let SiteInfoService = class SiteInfoService {
-    constructor() {
-    }
+    constructor() { }
     getSiteInfo(referer, id) {
         return __awaiter(this, void 0, void 0, function* () {
             let siteInfo = new SiteInfo_1.SiteInfo({});

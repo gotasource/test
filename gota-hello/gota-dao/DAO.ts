@@ -11,7 +11,7 @@ import {create} from "domain";
 import {Autowired} from "../gota-injection/index";
 import {PostInit} from "../gota-core/index";
 
-let CollectionsBull
+//let CollectionsPool
 export class DAO<T extends Model> {
     @Autowired
     private connection: Connection;
@@ -49,6 +49,11 @@ export class DAO<T extends Model> {
         return Object.keys(t).length === 0
     }
 
+    /**
+     * Create a document in database
+     * @param t  document
+     * @returns  id of the created document.
+     */
     async create(t: T): Promise<string>{
         // if(!t._id){
         //     t._id= (new ObjectId()).toString();
@@ -76,7 +81,14 @@ export class DAO<T extends Model> {
         return result.insertedId ;
     };
 
-    async createChild(parentId: string, childProperty:string, child: Object): Promise<string>{
+    /**
+     * Add a child document to root document
+     * @param  parentId  id of root document
+     * @param  childProperty
+     * @param  child  data of child
+     * @returns  true if the command executed correctly
+     */
+    async createChild(parentId: string, childProperty:string, child: Object): Promise<boolean>{
         let collection = this.collection;
         console.log(`Creating child ${childProperty} of ${collection.collectionName} - id: ${parentId}`);
         console.log(`Value: ${ JSON.stringify(child, null, 4)}`);
@@ -94,9 +106,14 @@ export class DAO<T extends Model> {
             console.log('Updating Many is Fail: %s', JSON.stringify(err, null, 4));
             throw err;
         }
-        return  result.result;
+        return  result.result.ok === 1; // Todo
     };
 
+    /**
+     * Read a document
+     * @param  id of document
+     * @returns  document
+     */
     async read(id: string): Promise<T>{
         let collection = this.collection;
         console.log('Reading "%s" id: %s', collection.collectionName, id);
@@ -126,6 +143,12 @@ export class DAO<T extends Model> {
         return t;
     };
 
+    /**
+     * Update properties of document
+     * @param  id of document
+     * @param  updatingProperties
+     * @returns  true if the command executed correctly
+     */
     async update(id: string, updatingProperties: Object): Promise<boolean>{
         let collection = this.collection;
         console.log('Updating "%s":\n\tid: %s\n\tproperties: %s', collection.collectionName, id, JSON.stringify(updatingProperties, null, 4));
@@ -173,6 +196,13 @@ export class DAO<T extends Model> {
         }
     }
 
+    /**
+     * Update properties of child document in a root document
+     * @param  parentId of root document
+     * @param childProperty property will be changed
+     * @param childQuery query condition ({$index:<number>} if update update child at <number>)
+     * @returns  true if the command executed correctly
+     */
     async updateChild(parentId: string, childProperty:string, childQuery:Object, updatingProperties: Object): Promise<boolean>{
         let collection = this.collection;
         //console.log('Updating "%s":\n\tid: %s\n\tproperties: %s', collection.collectionName, id, JSON.stringify(updatingProperties, null, 4));
@@ -247,6 +277,11 @@ export class DAO<T extends Model> {
         }
     }
 
+    /**
+     * Delete a document
+     * @param  id of document
+     * @returns  true if the command executed correctly
+     */
     async delete(id: string): Promise<boolean>{
         let collection = this.collection;
         console.log('Deleting "%s" id: %s', collection.collectionName, id);
@@ -275,6 +310,11 @@ export class DAO<T extends Model> {
         return  result.result && result.result.ok===1;
     }
 
+    /**
+     * Create Many documents
+     * @param  array documents will be created
+     * @returns  ids of created documents
+     */
     async createMany(array: Array<T>): Promise<Array<string>>{
         let collection = this.collection;
         console.log('Creating Many "%s"', collection.collectionName);
@@ -291,6 +331,11 @@ export class DAO<T extends Model> {
         return result.insertedIds;
     };
 
+    /**
+     * Search documents
+     * @param  query condition
+     * @returns  documents
+     */
     async search(query?: Object): Promise<Array<T>>{
         let collection = this.collection;
         console.log('Finding "%s"',  collection.collectionName);
@@ -304,6 +349,11 @@ export class DAO<T extends Model> {
         return array;
     }
 
+    /**
+     * Search documents
+     * @param  query condition
+     * @returns  documents
+     */
     async updateMany(query: Object, updatingProperties: Object): Promise<{ ok: number, n: number }>{
         let collection = this.collection;
         console.log('Updating Many "%s": %s', collection.collectionName, JSON.stringify(updatingProperties, null, 4));

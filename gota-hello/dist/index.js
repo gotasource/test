@@ -7,17 +7,16 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const gota_boot_1 = require("./gota-boot");
-const SiteInfoService_1 = require("./service/SiteInfoService");
 const Connection_1 = require("./gota-dao/Connection");
-let SiteInfoApp = class SiteInfoApp {
+const UserService_1 = require("./service/UserService");
+let ProductApp = class ProductApp {
 };
-SiteInfoApp = __decorate([
+ProductApp = __decorate([
     gota_boot_1.GotaApp({
-        name: 'SiteInfoApp',
-        scanner: [SiteInfoService_1.SiteInfoService, Connection_1.Connection],
+        scanner: [UserService_1.UserService, Connection_1.Connection],
         config: {
-            hostName: 'site-info.gt.com',
-            port: 3001,
+            hostName: 'localhost',
+            port: 3002,
             devMode: true,
             database: {
                 host: 'localhost',
@@ -26,7 +25,7 @@ SiteInfoApp = __decorate([
             }
         }
     })
-], SiteInfoApp);
+], ProductApp);
 ;
-gota_boot_1.GotaBoot(SiteInfoApp);
+gota_boot_1.GotaBoot(ProductApp);
 //# sourceMappingURL=index.js.map

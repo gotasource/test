@@ -101,9 +101,9 @@ export async function GotaBoot(appClass: Function) {
 
     serviceTargets.forEach(serviceTarget => {
 
-        let serviceMetaData = Reflect.getMetadata(DESIGN_META_DATA.SERVICE, serviceTarget.constructor);
-        let models = serviceMetaData.models;
-        Booter.bootModels(app, serviceMetaData.path, models);
+        //let serviceMetaData = Reflect.getMetadata(DESIGN_META_DATA.SERVICE, serviceTarget.constructor);
+        //let models = serviceMetaData.models;
+        // Booter.bootModels(app, serviceMetaData.path, models);
         Booter.bootService(app, serviceTarget);
     });
 

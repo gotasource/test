@@ -4,4 +4,5 @@ export declare class ProductService {
     categoryDAO: CategoryDAO;
     productDAO: ProductDAO;
     constructor();
+    getProducts(): void;
 }

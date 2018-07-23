@@ -4,6 +4,7 @@ import {GotaApp, GotaBoot} from "./gota-boot";
 import {SiteInfoService} from "./service/SiteInfoService";
 import {Connection} from "./gota-dao/Connection";
 import {ProductService} from "./service/ProductService";
+import {UserService} from "./service/UserService";
 
 // @GotaApp({
 //     name: 'Quick Start',
@@ -19,28 +20,28 @@ import {ProductService} from "./service/ProductService";
 //GotaBoot(App);
 
 
-@GotaApp({
-    name: 'SiteInfoApp',
-    scanner: [SiteInfoService, Connection],
-    config: {
-        hostName : 'site-info.gt.com',
-        port: 3001,
-        devMode:true,
-        database: {
-            host: 'localhost',
-            port: 27017,
-            databaseName:'gota'
+//@GotaApp({
+//    name: 'SiteInfoApp',
+//    scanner: [SiteInfoService, Connection],
+//    config: {
+//        hostName : 'localhost',
+//        port: 3000,
+//        devMode:true,
+//        database: {
+//            host: 'localhost',
+//            port: 27017,
+//            databaseName:'gota'
+//
+//        }
+//    }
+//})
+//class SiteInfoApp{};
+//GotaBoot(SiteInfoApp);
 
-        }
-    }
-})
-class SiteInfoApp{};
-GotaBoot(SiteInfoApp);
-/*
 @GotaApp({
-    scanner: [ProductService, Connection],
+    scanner: [UserService, Connection],
     config: {
-        hostName : 'product.gt.com',
+        hostName : 'localhost',
         port: 3002,
         devMode:true,
         database: {
@@ -53,4 +54,3 @@ GotaBoot(SiteInfoApp);
 })
 class ProductApp{};
 GotaBoot(ProductApp);
-*/

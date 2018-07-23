@@ -29,7 +29,15 @@ const REQUEST_METHOD = {
     PATCH: 'PATCH',
     DELETE: 'DELETE'
 };
-let autowiredContext = {};
+class BeanContext {
+    static setBean(name, value) {
+        this.beans[name] = value;
+    }
+    static getBean(name) {
+        return this.beans[name];
+    }
+}
+BeanContext.beans = {};
 function Config(configKey) {
     return function (target, property) {
         if (!configKey) {
@@ -74,10 +82,10 @@ function Autowired(target, property) {
     autowiredPropertyNames.push(property);
     Reflect.defineMetadata(DESIGN_META_DATA.AUTOWIRED, autowiredPropertyNames, target);
     let t = Reflect.getMetadata("design:typeinfo", target, property).type();
-    let obj = autowiredContext[t.name];
+    let obj = BeanContext.getBean(t.name);
     if (!(obj instanceof t)) {
         obj = new t();
-        autowiredContext[t.name] = obj;
+        BeanContext.setBean(t.name, obj);
     }
     let getter = function () {
         return obj;
