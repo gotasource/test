@@ -288,6 +288,8 @@ export default class Booter {
                     schema.push(childSchema);
                 }
             });
+
+            let returnSchema =  (typeof responseType === 'function')?  Helper.collectSchema(responseType):Helper.collectSchema(responseType)
             returnObject[key] =
                 {
                     requestData:requestData,

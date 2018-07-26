@@ -538,7 +538,7 @@ export default class GotaServer{
     listen(port, hostname, callback){
         this.server.listen(port, hostname, callback);
         this.server.on('error', err => {
-            console.log('There is a error when server start: '+err.message)
+            console.log('There is a error when server start: '+err.message);
         });
     }
 }

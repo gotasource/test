@@ -66,7 +66,9 @@ class DAO {
                     if (!isNaN(t._id)) {
                         t._id = String(Number(t._id) + 1);
                     }
-                    t._id = undefined;
+                    else {
+                        t._id = undefined;
+                    }
                     return yield this.create(t);
                 }
                 else {

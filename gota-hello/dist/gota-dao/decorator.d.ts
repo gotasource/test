@@ -7,7 +7,8 @@ export declare class RequestMethod {
     static PATCH: string;
     static DELETE: string;
 }
-export declare function Entity(properties: Array<{
+export declare function Entity(properties?: Array<{
     name: string;
     type: Function;
 }>): (...args: any[]) => void;
+export declare function Field(): (...args: any[]) => void;

@@ -22,6 +22,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 const gota_core_1 = require("../gota-core");
 const gota_service_1 = require("../gota-service");
+const User_1 = require("../models/User");
 function timeout(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
@@ -31,18 +32,11 @@ function sleep(fn, args) {
         return fn(...args);
     });
 }
-class User {
-    constructor(firstName, lastName) {
-        this.lastName = lastName;
-        this.firstName = firstName;
-    }
-}
-exports.User = User;
 let UserService = class UserService {
     constructor() {
     }
     readCategory(lastName, firstName) {
-        let user = new User(firstName, lastName);
+        let user = new User_1.User(firstName, lastName, null);
         return user;
     }
     readCategory1(lastName, firstName) {
@@ -57,11 +51,11 @@ __decorate([
     __metadata("design:typeinfo", {
         type: () => Function,
         paramTypes: () => [String, String],
-        returnType: () => User
+        returnType: () => typeof (_a = typeof User_1.User !== "undefined" && User_1.User) === "function" && _a || Object
     })
 ], UserService.prototype, "readCategory", null);
 __decorate([
-    gota_service_1.ServiceMapping({ requestMethod: [gota_service_1.RequestMethod.GET, gota_service_1.RequestMethod.PUT], path: '/bye' }), gota_core_1.AwaitedType(User),
+    gota_service_1.ServiceMapping({ requestMethod: [gota_service_1.RequestMethod.GET, gota_service_1.RequestMethod.PUT], path: '/bye' }), gota_core_1.AwaitedType(User_1.User),
     __param(0, gota_service_1.QueryParameter), __param(1, gota_service_1.QueryParameter),
     __metadata("design:typeinfo", {
         type: () => Function,
@@ -70,10 +64,11 @@ __decorate([
     })
 ], UserService.prototype, "readCategory1", null);
 UserService = __decorate([
-    gota_service_1.Service({ path: '/user-service' }),
+    gota_service_1.Service({ path: '/user-service', models: [User_1.User] }),
     __metadata("design:typeinfo", {
         paramTypes: () => []
     })
 ], UserService);
 exports.UserService = UserService;
+var _a;
 //# sourceMappingURL=UserService.js.map

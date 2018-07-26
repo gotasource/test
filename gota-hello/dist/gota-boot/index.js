@@ -53,9 +53,7 @@ function initConfig(serviceClasses, config) {
         let serviceMetaData = Reflect.getMetadata(DESIGN_META_DATA.SERVICE, serviceClass);
         let serviceConfig = Object.assign({}, config, serviceMetaData ? serviceMetaData.config : undefined);
         Reflect.defineMetadata(DESIGN_META_DATA.CONFIG, serviceConfig, serviceClass);
-        if (serviceMetaData) {
-            serviceTargets.push(new serviceClass());
-        }
+        serviceTargets.push(new serviceClass());
     });
     return serviceTargets;
 }
@@ -101,7 +99,10 @@ function GotaBoot(appClass) {
         let serviceTargets = initConfig(serviceClasses, config);
         yield executePostInit(serviceTargets);
         serviceTargets.forEach(serviceTarget => {
-            Booter_1.default.bootService(app, serviceTarget);
+            let serviceMetaData = Reflect.getMetadata(DESIGN_META_DATA.SERVICE, serviceTarget.constructor);
+            if (serviceMetaData) {
+                Booter_1.default.bootService(app, serviceTarget);
+            }
         });
         app.listen(config.port, config.hostName, function () {
             console.log(`${gotaAppMetadata.name || appClass.name} is listening at ${config.hostName}:${config.port}`);

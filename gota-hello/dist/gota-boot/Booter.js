@@ -10,6 +10,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 require("reflect-metadata");
 const index_1 = require("../gota-dao/index");
+const index_2 = require("../gota-helper/index");
 const DESIGN_META_DATA = {
     APP: 'design:meta:data:key:app',
     CONFIG: 'design:meta:data:key:config',
@@ -181,7 +182,6 @@ class Booter {
     }
     static bootCollectionService(server, collectionService) {
         collectionService.forEach(serviceInformation => {
-            let config = Reflect.getMetadata(DESIGN_META_DATA.CONFIG, serviceInformation.service.constructor);
             this.bootAcollectionServiceItem(server, serviceInformation);
         });
     }
@@ -208,6 +208,7 @@ class Booter {
     }
     static buildAOptionSummary(url, object) {
         let returnObject = { url: url };
+        let schema = [];
         Object.keys(object).forEach(key => {
             let responseType = object[key]['awaitedType'] || object[key]['returnType'] || 'String';
             let requestData = {};
@@ -230,11 +231,17 @@ class Booter {
                         requestData.body.push({ name: item.name, type: item.type.name });
                         break;
                 }
+                let childSchema = index_2.default.collectSchema(item.type);
+                if (childSchema.length > 0) {
+                    schema.push(childSchema);
+                }
             });
+            let returnSchema = (typeof responseType === 'function') ? index_2.default.collectSchema(responseType) : index_2.default.collectSchema(responseType);
             returnObject[key] =
                 {
                     requestData: requestData,
-                    responseType: responseType.name || responseType
+                    responseType: responseType.name || responseType,
+                    schema
                 };
         });
         return returnObject;
@@ -273,11 +280,20 @@ class Booter {
         let modelPath = model.name.replace(/[A-Z]/g, (match, offset, string) => {
             return (offset ? '-' : '') + match.toLowerCase();
         });
+        let declaredProperties = index_2.default.findDeclaredProperties(model).filter(property => property.name !== '_id');
         let bodyParameter = {
             designMetaData: DESIGN_META_DATA.BODY,
             name: 'body',
-            type: Object
+            type: model
         };
+        let bodyParameters = declaredProperties
+            .map(item => {
+            return {
+                designMetaData: DESIGN_META_DATA.BODY_PARAMETER,
+                name: item.name,
+                type: item.type
+            };
+        });
         let idPathParameter = {
             designMetaData: DESIGN_META_DATA.PATH_PARAMETER,
             name: 'id',
@@ -286,8 +302,16 @@ class Booter {
         let queryParameter = {
             designMetaData: DESIGN_META_DATA.QUERY,
             name: 'query',
-            type: Object
+            type: model
         };
+        let queryParameters = declaredProperties
+            .map(item => {
+            return {
+                designMetaData: DESIGN_META_DATA.QUERY_PARAMETER,
+                name: item.name,
+                type: item.type
+            };
+        });
         let unUnitName = function (str) {
             var re = new RegExp(/./g);
             str = str.toLowerCase();
@@ -327,8 +351,32 @@ class Booter {
             },
             create: function (body) {
                 return __awaiter(this, void 0, void 0, function* () {
-                    let _id = yield dao.create(body);
+                    let _id;
+                    if (Array.isArray(body)) {
+                        _id = yield dao.createMany(body);
+                    }
+                    else {
+                        _id = yield dao.create(body);
+                    }
                     return { _id: _id };
+                });
+            },
+            update: function (id, body) {
+                return __awaiter(this, void 0, void 0, function* () {
+                    let result = yield dao.update(id, body);
+                    return { result: result };
+                });
+            },
+            updateMany: function (query, body) {
+                return __awaiter(this, void 0, void 0, function* () {
+                    let result = yield dao.updateMany(query, body);
+                    return { result: result };
+                });
+            },
+            delete: function (id) {
+                return __awaiter(this, void 0, void 0, function* () {
+                    let result = yield dao.delete(id);
+                    return { result: result };
                 });
             },
             createChild: function (id, query, body) {
@@ -341,7 +389,7 @@ class Booter {
                     return { result: result };
                 });
             },
-            update: function (id, query, body) {
+            updateChild: function (id, query, body) {
                 return __awaiter(this, void 0, void 0, function* () {
                     let result;
                     if (query && Object.keys(query).find(key => query[key] == '$')) {
@@ -350,31 +398,16 @@ class Booter {
                         childQuery[childProperty] = undefined;
                         result = yield dao.updateChild(id, childProperty, childQuery, body);
                     }
-                    else {
-                        result = yield dao.update(id, body);
-                    }
                     return { result: result };
                 });
-            },
-            delete: function (id, body) {
-                return __awaiter(this, void 0, void 0, function* () {
-                    let result = yield dao.delete(id);
-                    return { result: result };
-                });
-            },
-            updateMany: function (query, body) {
-                return __awaiter(this, void 0, void 0, function* () {
-                    let result = yield dao.updateMany(query, body);
-                    return { result: result };
-                });
-            },
+            }
         };
         let search = {
             requestMethod: REQUEST_METHOD.GET,
             path: `${servicePath}/${modelPath}`,
             returnType: Promise,
-            awaitedType: `Array<${model.constructor.name}>`,
-            requestInformation: [queryParameter],
+            awaitedType: `Array<${model.name}>`,
+            requestInformation: [...queryParameters],
             service: null,
             function: executes.search
         };
@@ -382,17 +415,26 @@ class Booter {
             requestMethod: REQUEST_METHOD.POST,
             path: `${servicePath}/${modelPath}`,
             returnType: Promise,
-            awaitedType: model.constructor.name,
-            requestInformation: [bodyParameter],
+            awaitedType: model.name,
+            requestInformation: [...bodyParameters],
             service: null,
             function: executes.create
         };
+        let update = {
+            requestMethod: REQUEST_METHOD.PATCH,
+            path: `${servicePath}/${modelPath}/:id`,
+            returnType: Promise,
+            awaitedType: `Array<${model.name}>`,
+            requestInformation: [idPathParameter, ...bodyParameters],
+            service: null,
+            function: executes.update
+        };
         let updateMany = {
-            requestMethod: REQUEST_METHOD.POST,
+            requestMethod: REQUEST_METHOD.PATCH,
             path: `${servicePath}/${modelPath}`,
             returnType: Promise,
-            awaitedType: `Array<${model.constructor.name}>`,
-            requestInformation: [bodyParameter],
+            awaitedType: `Array<${model.name}>`,
+            requestInformation: [...queryParameters, ...bodyParameters],
             service: null,
             function: executes.updateMany
         };
@@ -400,7 +442,7 @@ class Booter {
             requestMethod: REQUEST_METHOD.GET,
             path: `${servicePath}/${modelPath}/:id`,
             returnType: Promise,
-            awaitedType: `Array<${model.constructor.name}>`,
+            awaitedType: `Array<${model.name}>`,
             requestInformation: [idPathParameter],
             service: null,
             function: executes.read
@@ -409,25 +451,16 @@ class Booter {
             requestMethod: REQUEST_METHOD.POST,
             path: `${servicePath}/${modelPath}/:id`,
             returnType: Promise,
-            awaitedType: `Array<${model.constructor.name}>`,
+            awaitedType: `Array<${model.name}>`,
             requestInformation: [idPathParameter, queryParameter, bodyParameter],
             service: null,
             function: executes.createChild
         };
-        let update = {
-            requestMethod: REQUEST_METHOD.PUT,
-            path: `${servicePath}/${modelPath}/:id`,
-            returnType: Promise,
-            awaitedType: `Array<${model.constructor.name}>`,
-            requestInformation: [idPathParameter, queryParameter, bodyParameter],
-            service: null,
-            function: executes.update
-        };
-        let update1 = {
+        let updateChild = {
             requestMethod: REQUEST_METHOD.PATCH,
             path: `${servicePath}/${modelPath}/:id`,
             returnType: Promise,
-            awaitedType: `Array<${model.constructor.name}>`,
+            awaitedType: `Array<${model.name}>`,
             requestInformation: [idPathParameter, queryParameter, bodyParameter],
             service: null,
             function: executes.update
@@ -436,12 +469,12 @@ class Booter {
             requestMethod: REQUEST_METHOD.DELETE,
             path: `${servicePath}/${modelPath}/:id`,
             returnType: Promise,
-            awaitedType: `Array<${model.constructor.name}>`,
+            awaitedType: `Array<${model.name}>`,
             requestInformation: [idPathParameter],
             service: null,
             function: executes.delete
         };
-        return [search, create, updateMany, read, createChild, update, update1, _delete];
+        return [search, create, updateMany, read, createChild, update, _delete];
     }
 }
 exports.default = Booter;
