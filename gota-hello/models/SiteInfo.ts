@@ -1,5 +1,6 @@
 import {Model} from "../gota-dao/Model";
 
+
 export class SiteInfo extends Model {
     public name:string;
     public phones: Array<string>;

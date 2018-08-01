@@ -38,6 +38,12 @@ import {UserService} from "./service/UserService";
 //class SiteInfoApp{};
 //GotaBoot(SiteInfoApp);
 
+
+process.on('unhandledRejection', error => {
+    // Will print "unhandledRejection err is not defined"
+    console.log('unhandledRejection',  error.message);
+});
+
 @GotaApp({
     scanner: [UserService, Connection],
     config: {

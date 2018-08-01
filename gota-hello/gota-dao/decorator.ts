@@ -45,8 +45,9 @@ export class RequestMethod{
 
 export function Entity(properties?: Array<{name:string, type: Function}>){
 	return function(... args : any[]): void {
-        let clazz = Helper.findSuper(args[0]);
-        let propertiesPlus =  [... Helper.findDeclaredProperties(clazz), ... properties];
+        let superClazz = Helper.findSuper(args[0]);
+        let superProperties = (Helper.findDeclaredProperties(superClazz)||[]).filter(item => properties.findIndex(i => i.name !== item.name));
+        let propertiesPlus =  [... superProperties, ... properties];
 	    Reflect.defineMetadata(DESIGN_META_DATA.ENTITY, propertiesPlus, args[0]);
 	}
 }
@@ -54,7 +55,7 @@ export function Entity(properties?: Array<{name:string, type: Function}>){
 export function Field(){
     return function(... args : any[]): void {
         let clazz = Helper.findSuper(args[0]);
-        let propertiesPlus =  [... Helper.findDeclaredProperties(clazz), ... properties];
+        let propertiesPlus =  [... Helper.findDeclaredProperties(clazz)];
         Reflect.defineMetadata(DESIGN_META_DATA.ENTITY, propertiesPlus, args[0]);
     }
 }

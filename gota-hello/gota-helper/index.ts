@@ -61,8 +61,9 @@ function  findSuper(child: Function): Function{
 function findDeclaredProperties(clazz:Function): Array<{name:string, type: Function}>{
     let _clazz = clazz;
     let properties:  Array<{name:string, type: Function}> = [];
-    while (Reflect.getOwnMetadata(DESIGN_META_DATA.ENTITY, _clazz)){
-        properties = [...Reflect.getOwnMetadata(DESIGN_META_DATA.ENTITY, _clazz), ...properties];
+    while (_clazz.name && _clazz.name !== 'Object'){
+        let p = (Reflect.getOwnMetadata(DESIGN_META_DATA.ENTITY, _clazz)||[]).filter(item => properties.findIndex( i=> i.name !== item.name));
+        properties = [...p, ...properties];
         _clazz = Helper.findSuper(_clazz);
     }
     return properties;

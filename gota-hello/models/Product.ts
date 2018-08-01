@@ -1,11 +1,13 @@
 import {Model} from "../gota-dao/Model";
+import {Entity} from "../gota-dao/decorator";
 
+@Entity()
 export class Product extends Model {
-    categoryId: string;
-    code: string;
-    name:string;
-    price:number;
+    categoryId: String;
+    code: String;
+    name:String;
+    price:Number;
     description: string
-    images:Array<{source:string, order: number}>;
+    images:Array<{source:String, order: Number}>;
     order: number;
 }

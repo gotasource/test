@@ -1,8 +1,8 @@
 import { Model } from "../gota-dao/Model";
 export declare class Category extends Model {
-    siteId: string;
-    name: string;
-    avatars: string[];
+    siteId: String;
+    name: String;
+    avatars: String[];
     children: Category[];
-    order: number;
+    order: Number;
 }

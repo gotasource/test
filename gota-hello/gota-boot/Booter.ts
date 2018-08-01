@@ -96,7 +96,7 @@ export default class Booter {
                 function: _function,
                 requestMethod: methodMetaData.requestMethod || REQUEST_METHOD.GET,
                 path: methodMetaData.path,
-                returnType:methodMetaData.returnType,
+                returnType:methodMetaData.returnType(),
                 awaitedType: methodMetaData.awaitedType,
                 parameterWrappers: parameterWrappers
             }
@@ -283,13 +283,16 @@ export default class Booter {
                         requestData.body.push({name: item.name, type:item.type.name});
                         break;
                 }
-                let childSchema = Helper.collectSchema(item.type);
-                if(childSchema.length>0){
-                    schema.push(childSchema);
+                if(typeof item.type === 'function'){
+                    let childSchema = Helper.collectSchema(item.type);
+                    if(childSchema.length>0){
+                        schema.push(childSchema);
+                    }
                 }
             });
 
-            let returnSchema =  (typeof responseType === 'function')?  Helper.collectSchema(responseType):Helper.collectSchema(responseType)
+            let returnSchema =  (typeof responseType === 'function')?  Helper.collectSchema(responseType): [];
+            schema.push(...returnSchema);
             returnObject[key] =
                 {
                     requestData:requestData,

@@ -4,8 +4,9 @@ import {Address} from "./Address";
 
 @Entity()
 export class User extends Model {
-    name:string;email:string;
-    phone:string;
+    name:String;
+    email:String;
+    phone:String;
     address: Address
     constructor(name:string,  email:string, phone:string){
         super({name:name, email:email, phone:phone});

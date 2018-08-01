@@ -1,9 +1,11 @@
 import {Model} from "../gota-dao/Model";
+import {Entity} from "../gota-dao/decorator";
 
+@Entity()
 export class Category extends Model {
-    siteId: string;
-    name:string;
-    avatars:string[];
-    children:Category[];
-    order: number;
+    siteId: String;
+    name: String;
+    avatars: String[];
+    children: Category[];
+    order: Number;
 }

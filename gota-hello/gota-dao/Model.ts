@@ -1,7 +1,7 @@
 import {Entity} from "./decorator";
 @Entity()
 export class Model {
-    _id?: string;
+    _id?: String;
     constructor(object: any){
         Object.keys(object).forEach(key=>{
             this[key] = object[key];
