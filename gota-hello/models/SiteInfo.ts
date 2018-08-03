@@ -1,4 +1,4 @@
-import {Model} from "../gota-dao/Model";
+import {Model,Entity} from "../gota-dao/index";
 
 
 export class SiteInfo extends Model {

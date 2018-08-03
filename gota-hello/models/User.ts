@@ -1,5 +1,4 @@
-import {Model} from "../gota-dao/Model";
-import {Entity} from "../gota-dao/decorator";
+import {Model,Entity} from "../gota-dao/index";
 import {Address} from "./Address";
 
 @Entity()

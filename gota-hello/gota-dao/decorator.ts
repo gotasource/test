@@ -1,7 +1,7 @@
 
 //https://rbuckton.github.io/reflect-metadata/#syntax
 import 'reflect-metadata'
-import Helper from "../gota-helper/index";
+import { Helper } from "../gota-core/index";
 
 const DESIGN_META_DATA = {
     APP : 'design:meta:data:key:app',
@@ -22,7 +22,8 @@ const DESIGN_META_DATA = {
     BODY_PARAMETER : 'design:meta:data:key:body:parameter',
     HEADERS : 'design:meta:data:key:headers',
     HEADERS_PARAMETER : 'design:meta:data:key:headers:parameter',
-    ENTITY : 'design:meta:data:key:entity'
+    ENTITY : 'design:meta:data:key:entity',
+    ENTITY_CONTAINER : 'design:meta:data:key:entity:container'
 };
 
 const REQUEST_METHOD = {
@@ -33,15 +34,27 @@ const REQUEST_METHOD = {
     PATCH : 'PATCH',// UPDATE
     DELETE : 'DELETE'
 };
-export class RequestMethod{
-    static OPTIONS = 'OPTIONS';
-    static GET  =  'GET';
-    static  POST  = 'POST';
-    static  PUT  = 'PUT';
-    static  PATCH  = 'PATCH';
-    static  DELETE = 'DELETE';
-}
+//export class RequestMethod{
+//    static OPTIONS = 'OPTIONS';
+//    static GET  =  'GET';
+//    static  POST  = 'POST';
+//    static  PUT  = 'PUT';
+//    static  PATCH  = 'PATCH';
+//    static  DELETE = 'DELETE';
+//}
 
+export class EntityContainer{
+    private static entities: Array<Function> = [];
+    public static addEntity(entity: Function){
+        this.entities.push(entity);
+    }
+    public static getEntities():Array<Function>{
+        return this.entities;
+    }
+    public static findEntity(name:String): Function{
+        return this.entities.find(item => item.name === name);
+    }
+}
 
 export function Entity(properties?: Array<{name:string, type: Function}>){
 	return function(... args : any[]): void {
@@ -49,6 +62,7 @@ export function Entity(properties?: Array<{name:string, type: Function}>){
         let superProperties = (Helper.findDeclaredProperties(superClazz)||[]).filter(item => properties.findIndex(i => i.name !== item.name));
         let propertiesPlus =  [... superProperties, ... properties];
 	    Reflect.defineMetadata(DESIGN_META_DATA.ENTITY, propertiesPlus, args[0]);
+        EntityContainer.addEntity(args[0]);
 	}
 }
 

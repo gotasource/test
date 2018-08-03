@@ -20,22 +20,22 @@ const DESIGN_META_DATA = {
     ENTITY : 'design:meta:data:key:entity'
 };
 
-const REQUEST_METHOD = {
-    OPTIONS: 'OPTIONS',
-    GET :'GET',
-    POST :'POST',//CREATE
-    PUT :'PUT',// REPLACE
-    PATCH : 'PATCH',// UPDATE
-    DELETE : 'DELETE'
-};
-export class RequestMethod{
-    static OPTIONS = 'OPTIONS';
-    static GET  =  'GET';
-    static  POST  = 'POST';
-    static  PUT  = 'PUT';
-    static  PATCH  = 'PATCH';
-    static  DELETE = 'DELETE';
-}
+//const REQUEST_METHOD = {
+//    OPTIONS: 'OPTIONS',
+//    GET :'GET',
+//    POST :'POST',//CREATE
+//    PUT :'PUT',// REPLACE
+//    PATCH : 'PATCH',// UPDATE
+//    DELETE : 'DELETE'
+//};
+//export class RequestMethod{
+//    static OPTIONS = 'OPTIONS';
+//    static GET  =  'GET';
+//    static  POST  = 'POST';
+//    static  PUT  = 'PUT';
+//    static  PATCH  = 'PATCH';
+//    static  DELETE = 'DELETE';
+//}
 
 //https://davidwalsh.name/javascript-arguments
 function getArguments(func:Function): Array<string> {
@@ -80,13 +80,17 @@ function collectSchema(clazz:Function): Array<{name: String, properties: Array<{
             if(childSchema.length>0){
                 schema.push(...childSchema);
             }
-           return {name:property.name, type:property.type.name};
+            return {name:property.name, type:property.type.name};
         });
         schema.push({name: clazz.name, properties: properties});
         schema = schema.filter((item, index, target) => target.indexOf(item) === index);
     }
     return schema;
 }
+
+//function collectSchema(clazz:String): Array<{name: String, properties: Array<{name:String, type: String}>}>{
+//    return null;
+//}
 
 
 export default class Helper{

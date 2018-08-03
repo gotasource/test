@@ -2,3 +2,4 @@
 export { DAO } from "./DAO";
 export { Connection} from "./Connection";
 export { Model } from "./Model";
+export { EntityContainer, Entity, Field } from "./decorator";

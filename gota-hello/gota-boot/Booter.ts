@@ -1,6 +1,7 @@
 import "reflect-metadata";
 import {DAO} from "../gota-dao/index";
-import Helper from "../gota-helper/index";
+import {Helper} from "../gota-core/index";
+import {EntityContainer} from "../gota-dao/decorator";
 
 const DESIGN_META_DATA = {
     APP : 'design:meta:data:key:app',
@@ -291,15 +292,30 @@ export default class Booter {
                 }
             });
 
-            let returnSchema =  (typeof responseType === 'function')?  Helper.collectSchema(responseType): [];
+            let returnSchema = [];
+            if(typeof responseType === 'function'){
+                returnSchema = Helper.collectSchema(responseType);
+            } else if(typeof responseType === 'string'){
+                if(responseType.indexOf('<')>-1 && responseType.indexOf('>')>-1){
+                    let genericTypeName = responseType.substring(responseType.indexOf('<')+1, responseType.indexOf('>'));
+                    if(genericTypeName.length>0){
+                        let entity:Function = EntityContainer.findEntity(genericTypeName);
+                        if(entity){
+                            returnSchema = Helper.collectSchema(entity);
+                        }
+                    }
+                }
+            }
             schema.push(...returnSchema);
             returnObject[key] =
                 {
                     requestData:requestData,
-                    responseType: responseType.name || responseType,
-                    schema
+                    responseType: responseType.name || responseType
                 }
         });
+        
+
+        returnObject['schema'] = schema;
         return returnObject;
     }
     private static bootSummaryService(server: any,path:string | string[],  optionServiceInformationList:any):void{
