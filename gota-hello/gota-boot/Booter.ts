@@ -256,34 +256,43 @@ export default class Booter {
         let schema =[]
         Object.keys(object).forEach(key =>{
             let responseType:any = object[key]['awaitedType'] || object[key]['returnType'] || 'String';
-            let requestData:{path?: object[], headers?: object[], query?: object[], body?: any[]} = {};
+            let requestData:{path?: any[], headers?: any[], query?: any[], body?: any[]} = {};
             object[key]['requestInformation'].forEach(item => {
+
+                let parameterColection:Array<{name:string, type: Function}>;
+                let declaredProperties:Array<{name:string, type: Function}>;
+
+                if([DESIGN_META_DATA.HEADERS, DESIGN_META_DATA.QUERY, DESIGN_META_DATA.BODY].includes(item.designMetaData)){
+                    declaredProperties = Helper.findDeclaredProperties(item.type);
+                }else{
+                    declaredProperties = [{name: item.name, type:item.type}];
+                }
                 switch (item.designMetaData){
                     case DESIGN_META_DATA.PATH_PARAMETER:
-                        requestData.path = requestData.path || [];
-                        requestData.path.push({name: item.name, type:item.type.name});
+                        parameterColection = requestData.path = requestData.path || [];
                         break;
+                    case DESIGN_META_DATA.HEADERS:
                     case DESIGN_META_DATA.HEADERS_PARAMETER:
-                        requestData.headers = requestData.headers || [];
-                        requestData.headers.push({name: item.name, type:item.type.name});
+                        parameterColection = requestData.headers = requestData.headers || [];
                         break;
-                    //case DESIGN_META_DATA.QUERY:{
-                    //    requestData.query = item.type.name
-                    //    break;
-                    //}
+                    case DESIGN_META_DATA.QUERY:
                     case DESIGN_META_DATA.QUERY_PARAMETER:
-                        requestData.query = requestData.query || [];
-                        requestData.query.push({name: item.name, type:item.type.name});
+                        parameterColection = requestData.query = requestData.query || [];
                         break;
-                    //case DESIGN_META_DATA.BODY:{
-                    //    requestData.body = item.type.name
-                    //    break;
-                    //}
+                    case DESIGN_META_DATA.BODY:
                     case DESIGN_META_DATA.BODY_PARAMETER:
                         requestData.body = requestData.body || [];
-                        requestData.body.push({name: item.name, type:item.type.name});
+                        parameterColection = requestData.body;
                         break;
                 }
+
+                declaredProperties.forEach(property => {
+                    let sameProperty = parameterColection.find(p => p.name === property.name);
+                    if(!sameProperty){
+                        parameterColection.push({name: property.name, type:property.type.name});
+                    }
+                });
+
                 if(typeof item.type === 'function'){
                     let childSchema = Helper.collectSchema(item.type);
                     if(childSchema.length>0){
@@ -376,15 +385,15 @@ export default class Booter {
             type: model
         }
 
-        let bodyParameters: ParameterWrapper[] = declaredProperties
-            .map(item => {
-                    return {
-                        designMetaData: DESIGN_META_DATA.BODY_PARAMETER,
-                        name:item.name,
-                        type:item.type
-                    }
-                }
-            );
+        //let bodyParameters: ParameterWrapper[] = declaredProperties
+        //    .map(item => {
+        //            return {
+        //                designMetaData: DESIGN_META_DATA.BODY_PARAMETER,
+        //                name:item.name,
+        //                type:item.type
+        //            }
+        //        }
+        //    );
 
         let idPathParameter:ParameterWrapper = {
             designMetaData: DESIGN_META_DATA.PATH_PARAMETER,
@@ -427,15 +436,17 @@ export default class Booter {
 
         let executes = {
             search: async function (query){
-                Object.keys(query).forEach(key => {
-                    if(query[key].startsWith('$regex:')){
-                        let regexValue = query[key].substring('$regex:'.length).trim();
-                        regexValue = unUnitName(regexValue);
-                        query[key] = {
-                            $regex:new RegExp(regexValue, 'i')
+                if(query) {
+                    Object.keys(query).forEach(key => {
+                        if (query[key].startsWith('$regex:')) {
+                            let regexValue = query[key].substring('$regex:'.length).trim();
+                            regexValue = unUnitName(regexValue);
+                            query[key] = {
+                                $regex: new RegExp(regexValue, 'i')
+                            }
                         }
-                    }
-                });
+                    });
+                }
                 let t = await dao.search(query);
                 return t;
             },
@@ -501,7 +512,7 @@ export default class Booter {
             path:`${servicePath}/${modelPath}`,
             returnType: Promise,
             awaitedType: `Array<${model.name}>`,
-            requestInformation: [... queryParameters],
+            requestInformation: [queryParameter],
             service: null,
             function: executes.search
         }
@@ -511,7 +522,7 @@ export default class Booter {
             path:`${servicePath}/${modelPath}`,
             returnType: Promise,
             awaitedType: model.name,
-            requestInformation: [... bodyParameters],
+            requestInformation: [bodyParameter],
             service: null,
             function: executes.create
         }
@@ -521,7 +532,7 @@ export default class Booter {
             path:`${servicePath}/${modelPath}/:id`,
             returnType: Promise,
             awaitedType: `Array<${model.name}>`,
-            requestInformation: [idPathParameter, ...bodyParameters],
+            requestInformation: [idPathParameter, bodyParameter],
             service: null,
             function:executes.update
         }
@@ -531,7 +542,7 @@ export default class Booter {
             path:`${servicePath}/${modelPath}`,
             returnType: Promise,
             awaitedType: `Array<${model.name}>`,
-            requestInformation: [...queryParameters, ... bodyParameters],
+            requestInformation: [queryParameter, bodyParameter],
             service: null,
             function: executes.updateMany
         }

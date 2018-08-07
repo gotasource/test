@@ -54,7 +54,6 @@ process.on('unhandledRejection', error => {
             host: 'localhost',
             port: 27017,
             databaseName:'gota'
-
         }
     }
 })

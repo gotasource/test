@@ -16,11 +16,21 @@ class Connection {
     @PostInit
     protected async open():Promise<void>{
         if(!Connection.db){
-            // while(!Connection.databaseConfig){
-            //     await delay(1000);
-            // }
-            //let host = this.databaseConfig.host;
-            //let port = this.databaseConfig.port;
+             if(!this.databaseConfig){
+                    let databaseFormat =
+                    `
+                    database: {
+                        host: <host>,
+                        port: <port>,
+                        databaseName:<databaseName>
+                    }
+                    or
+                     database: {
+                        url: <url>
+                    }
+                    `;
+                    throw new Error('\n\rDatabase config is not found or wrong format. please update database config with format: ' + databaseFormat);
+                }
             let databaseName = this.databaseConfig.databaseName;
             let url = this.databaseConfig.url || `mongodb://${this.databaseConfig.host}:${this.databaseConfig.port}/`;
             try{

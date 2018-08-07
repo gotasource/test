@@ -88,6 +88,10 @@ function collectSchema(clazz:Function): Array<{name: String, properties: Array<{
     return schema;
 }
 
+function getPropertyType(clazz: Function, property: String){
+
+}
+
 //function collectSchema(clazz:String): Array<{name: String, properties: Array<{name:String, type: String}>}>{
 //    return null;
 //}
