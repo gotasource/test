@@ -88,10 +88,45 @@ function collectSchema(clazz:Function): Array<{name: String, properties: Array<{
     return schema;
 }
 
-function getPropertyType(clazz: Function, property: String){
-
+function getTypeProperty(clazz: Function, propertyName: String){
+    let _clazz = clazz;
+    let propertyNameItems = propertyName.split('.');
+    propertyNameItems.forEach(propertyNameItem =>{
+        if(_clazz){
+            let declaredProperties = findDeclaredProperties(_clazz);
+            let declaredProperty = declaredProperties.find(property => property.name === propertyNameItem);
+            if(declaredProperty){
+                _clazz = declaredProperty.type;
+            } else {
+                _clazz = undefined;
+            }
+        }
+    });
+    return _clazz;
 }
 
+
+function isNotEmptyObject(obj) {
+    let result = false;
+    if(obj !== null && obj !== undefined){
+        if (['string', 'number', 'boolean'].includes(typeof obj)){
+            result = true;
+        } else {
+            if (typeof obj === 'object') {
+                if(obj instanceof String || obj instanceof Date || obj instanceof Number || obj instanceof Boolean){
+                    result = true;
+                } else if (Object.keys(obj).length > 0) {
+                    Object.keys(obj).forEach(property => {
+                        if (!result) {
+                            result = isNotEmptyObject(obj[property]);
+                        }
+                    });
+                }
+            }
+        }
+    }
+    return result;
+}
 //function collectSchema(clazz:String): Array<{name: String, properties: Array<{name:String, type: String}>}>{
 //    return null;
 //}
@@ -100,6 +135,9 @@ function getPropertyType(clazz: Function, property: String){
 export default class Helper{
     public static getArguments: Function = getArguments;
     public static findSuper: Function = findSuper;
-    public static findDeclaredProperties = findDeclaredProperties
-    public static collectSchema = collectSchema
+    public static findDeclaredProperties = findDeclaredProperties;
+    public static collectSchema = collectSchema;
+    public static getTypeProperty = getTypeProperty;
+    public static isNotEmptyObject = isNotEmptyObject;
+
 }

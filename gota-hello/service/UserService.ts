@@ -1,6 +1,8 @@
 
 import {QueryParameter, RequestMethod, Service, ServiceMapping} from '../gota-service';
 import {User} from "../models/User";
+import {Address} from "../models/Address";
+import {BodyParameter, Body} from "../gota-service/index";
 
 function timeout(ms:number) {
     return new Promise(resolve => setTimeout(resolve, ms));
@@ -16,13 +18,19 @@ export class UserService{
     }
 
     @ServiceMapping({path:['/hi','/hii']})
-    readCategory(@QueryParameter lastName:string, @QueryParameter firstName:string): User{
-        let user = new User(firstName, lastName, null);
+    hi(@QueryParameter firstName:String, @QueryParameter lastName:String, @QueryParameter email: String, @QueryParameter phone:String, @QueryParameter birthday: Date, @QueryParameter gender: Boolean, @QueryParameter weight: Number, @QueryParameter height: Number): User{
+        let user = new User(firstName +' '+ lastName, email, phone, birthday, null, gender, weight, height);
         return user;
     }
 
-    @ServiceMapping({requestMethod:[RequestMethod.GET,RequestMethod.PUT], path: '/bye'})
-    async readCategory1(@QueryParameter lastName:string, @QueryParameter firstName:string):Promise<User>{
-        return await sleep(this.readCategory, [lastName, firstName]);
+    @ServiceMapping({requestMethod:RequestMethod.POST, path:'/bye'})
+    bye(@BodyParameter firstName:String, @BodyParameter lastName:String, @BodyParameter email: String, @BodyParameter phone:String, @BodyParameter address: Address,@BodyParameter birthday: Date, @BodyParameter gender: Boolean, @BodyParameter weight: Number, @BodyParameter height: Number): User{
+        let user = new User(firstName +' '+ lastName, email, phone, birthday, address, gender, weight, height);
+        return user;
+    }
+
+    @ServiceMapping({requestMethod:RequestMethod.POST, path:'/bye1'})
+    bye1(@Body user: User): User{
+        return user;
     }
 }

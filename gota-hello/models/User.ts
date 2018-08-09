@@ -6,8 +6,12 @@ export class User extends Model {
     name:String;
     email:String;
     phone:String;
-    address: Address
-    constructor(name:string,  email:string, phone:string){
-        super({name:name, email:email, phone:phone});
+    birthday: Date;
+    address: Address;
+    gender: Boolean;
+    weight: Number;
+    height: Number
+    constructor(name:String, email:String, phone:String, birthday: Date, address: Address, gender: Boolean, weight: Number, height: Number){
+        super({name, email, phone, birthday, address, gender, weight, height});
     }
 }

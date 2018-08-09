@@ -259,7 +259,7 @@ export default class Booter {
             let requestData:{path?: any[], headers?: any[], query?: any[], body?: any[]} = {};
             object[key]['requestInformation'].forEach(item => {
 
-                let parameterColection:Array<{name:string, type: Function}>;
+                let parameterColection:Array<{name:string, type: String}>;
                 let declaredProperties:Array<{name:string, type: Function}>;
 
                 if([DESIGN_META_DATA.HEADERS, DESIGN_META_DATA.QUERY, DESIGN_META_DATA.BODY].includes(item.designMetaData)){
@@ -437,8 +437,9 @@ export default class Booter {
         let executes = {
             search: async function (query){
                 if(query) {
+                    query =JSON.parse(JSON.stringify(query));
                     Object.keys(query).forEach(key => {
-                        if (query[key].startsWith('$regex:')) {
+                        if (query[key] && query[key].startsWith('$regex:')) {
                             let regexValue = query[key].substring('$regex:'.length).trim();
                             regexValue = unUnitName(regexValue);
                             query[key] = {
@@ -447,6 +448,7 @@ export default class Booter {
                         }
                     });
                 }
+
                 let t = await dao.search(query);
                 return t;
             },

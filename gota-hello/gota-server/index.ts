@@ -1,6 +1,7 @@
 import { Server } from "http";
 import  * as http from "http";
 import * as fs from "fs";
+import Helper from "../gota-core/Helper";
 const hostname = '127.0.0.1';
 const port = 3000;
 const encode = 'utf8';
@@ -68,50 +69,92 @@ export class FileWrapper{
 }
 
 class ParseError extends Error {
-
+    sourceValue: any;
+    targetType: Function;
+    constructor(sourceValue: any, targetType: Function){
+        super(`Can not parse value: ${sourceValue}' - ${JSON.stringify(sourceValue)} to ${targetType.name}`);
+        this.targetType = targetType;
+        this.sourceValue = sourceValue;
+    }
 }
 
 const converter = {
-    stringToNumber: function (str) {
-        return new Number(str);
+    stringToBoolean: function (source) {
+        if(isNaN(source)){
+            return ['true','yes','on'].includes(source.toLowerCase());
+        }else{
+            return +source > 0; // true <- 1,2,3, ..., false <- 0, -1, -2, ...
+        }
     },
-    stringToDate: function (str) {
-        return new Date(str);
+    stringToNumber: function (source) {
+        if(isNaN(source)){
+            return 0;
+        }else{
+            return +source;
+        }
+    },
+    stringToDate: function (source) {
+        if(isNaN(source)){
+            // 'Wed Aug 08 2018 13:54:13' <= (new Date()).getToString()
+            return new Date(source);
+        }else{
+            // 1533710985865 <= (new Date()).getTime()
+            return new Date(+source);
+        }
+    },
+    numberToDate: function (source) {
+        return new Date(source);
+    },
+    numberToString: function (source) {
+        return source+'';
+    },
+    numberToBoolean: function (source) {
+        return source > 0;
+    },
+    booleanToString: function (source) {
+        return source+'';
+    },
+    booleanToNumber: function (source) {
+        return source ? 1 : 0;
     },
     fileWrapperToFile:  function (fileWrapper) {
         return fileWrapper;
-    },
+    }
 }
 
-function parseValue(value, item){
-    if(value && value.constructor !== item.type){
-        try{
-            let parser = item.parser || converter[value.constructor.name[0].toLowerCase()+value.constructor.name.substring(1) +'To'+item.type.name];
-            if(!parser){
-                //const isClass = v => typeof v === 'function' && /^\s*class\s+/.test(v.toString())
-                if (typeof item.type === 'function' && /^\s*class\s+/.test(item.type.toString())){
-                    let object = new item.type();
-                    if(typeof value === 'string'){
-                        value = JSON.parse(value);
+function parseValue(value, type){
+    let val = value;
+    if(type){
+        if(val && val.constructor !== type){
+            try{
+                let parser = converter[val.constructor.name[0].toLowerCase()+val.constructor.name.substring(1) +'To'+type.name];
+                if(!parser){
+                    //const isClass = v => typeof v === 'function' && /^\s*class\s+/.test(v.toString())
+                    if (typeof type === 'function' && /^\s*class\s+/.test(type.toString())){
+                        let object = new type();
+                        if(typeof val === 'string'){
+                            val = JSON.parse(val);
+                        }
+
+                        Object.keys(val).forEach(key=>{
+                            object[key] = parseValue(val[key], Helper.getTypeProperty(type, key));
+                        })
+                        val = object;
+                    }else {
+                        throw new ParseError(val, type);
                     }
-
-                    Object.keys(value).forEach(key=>{
-                        object[key] = value[key];
-                    })
-                    value = object;
                 }else {
-                    throw new ParseError('can not parse parameter '+ item.name +' from '+value.constructor.name +' to ' +item.type.name+', please add new parser');
+                    val = parser(val);
                 }
-            }else {
-                value = parser(value);
-            }
 
-        }catch (err){
-            console.log(err.message);
-            throw new ParseError('can not parse parameter '+ item.name +' from '+value.constructor.name +' to ' +item.type.name+', please add new parser');
+            }catch (err){
+                console.log(err.message);
+                throw new ParseError(val, type);
+            }
         }
     }
-    return value;
+
+    return val;
 }
 
 
@@ -441,7 +484,6 @@ export default class GotaServer{
                             switch(item.designMetaData){
                                 case DESIGN_META_DATA.PATH_PARAMETER :
                                     value = pathArgs[item.name];
-                                    value = parseValue(value, item);
                                     break;
                                 case DESIGN_META_DATA.REQUEST :
                                     value = req;
@@ -454,28 +496,40 @@ export default class GotaServer{
                                     break;
                                 case DESIGN_META_DATA.QUERY_PARAMETER :
                                     value = req.query ? req.query[item.name]: undefined;
-                                    value = parseValue(value, item);
                                     break;
                                 case DESIGN_META_DATA.BODY :
                                     value = req.body || {};
                                     break;
                                 case DESIGN_META_DATA.BODY_PARAMETER :
                                     value = req.body? req.body[item.name]: undefined;
-                                    value = parseValue(value, item);
                                     break;
                                 case DESIGN_META_DATA.HEADERS :
-                                    value = req.headers || {};
+                                    let headers = req.headers || {};
+                                    value = {};
+                                    Object.keys(headers).forEach(key =>{
+                                        let lowerCamelCaseKey = key.replace(/\-[0-9a-zA-Z]/g, (match, offset, string) => {
+                                            return (offset ? match.charAt(1).toUpperCase() :  match.charAt(1).toLowerCase());
+                                        });
+                                        value[lowerCamelCaseKey] = headers[key];
+                                    });
+
                                     break;
                                 case DESIGN_META_DATA.HEADERS_PARAMETER :
                                     let argLowerCase = item.name.replace(/[A-Z]/g, (match, offset, string) => {
                                         return (offset ? '-' : '') + match.toLowerCase();
                                     });
                                     value =  req.headers[argLowerCase];
-                                    value = parseValue(value, item);
                                     break;
                             }
+                            if(typeof item['parser'] === 'function'){
+                                value = item['parser'](value);
+                            }else{
+                                value = parseValue(value, item.type);
+                            }
+
                         }catch (err){
                             if(err instanceof ParseError){
+                                console.log(err.message);
                                 console.log('class: '+ context ? context.constructor.name:'');
                                 console.log('method: '+ execute ? execute.name:'');
                                 console.log('arg: '+ item.name);
