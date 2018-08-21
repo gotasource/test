@@ -39,9 +39,9 @@ import {UserService} from "./service/UserService";
 //GotaBoot(SiteInfoApp);
 
 
-process.on('unhandledRejection', error => {
+process.on('unhandledRejection', (...error) => {
     // Will print "unhandledRejection err is not defined"
-    console.log('unhandledRejection',  error.message);
+    console.log('unhandledRejection',  error[0].message);
 });
 
 @GotaApp({

@@ -53,7 +53,7 @@ function getArguments(func:Function): Array<string> {
     });
 }
 
-function  findSuper(child: Function): Function{
+function  getSuper(child: Function): Function{
     let _super: Function = Object.getPrototypeOf(child.prototype).constructor;
     return _super;
 }
@@ -134,7 +134,7 @@ function isNotEmptyObject(obj) {
 
 export default class Helper{
     public static getArguments: Function = getArguments;
-    public static findSuper: Function = findSuper;
+    public static findSuper: Function = getSuper;
     public static findDeclaredProperties = findDeclaredProperties;
     public static collectSchema = collectSchema;
     public static getTypeProperty = getTypeProperty;

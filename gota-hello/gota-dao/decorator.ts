@@ -23,7 +23,8 @@ const DESIGN_META_DATA = {
     HEADERS : 'design:meta:data:key:headers',
     HEADERS_PARAMETER : 'design:meta:data:key:headers:parameter',
     ENTITY : 'design:meta:data:key:entity',
-    ENTITY_CONTAINER : 'design:meta:data:key:entity:container'
+    ENTITY_CONTAINER : 'design:meta:data:key:entity:container',
+    FIELD_DYNAMIC_ACCESS_MODE : 'design:meta:data:key:field:dynamic:access:mode'
 };
 
 const REQUEST_METHOD = {
@@ -56,8 +57,15 @@ export class EntityContainer{
     }
 }
 
-export function Entity(properties?: Array<{name:string, type: Function}>){
+export function Entity(properties?: Array<{name:string, type: Function, dynamicAccessMode?: Array<String>}>){
 	return function(... args : any[]): void {
+        let clazz = args[0];
+        properties.forEach(property =>{
+            let dynamicAccessModes = Reflect.getMetadata(DESIGN_META_DATA.FIELD_DYNAMIC_ACCESS_MODE, clazz.prototype, property.name);
+            if(Array.isArray(dynamicAccessModes)){
+                property.dynamicAccessMode = dynamicAccessModes;
+            }
+        });
         let superClazz = Helper.findSuper(args[0]);
         let superProperties = (Helper.findDeclaredProperties(superClazz)||[]).filter(item => properties.findIndex(i => i.name !== item.name));
         let propertiesPlus =  [... superProperties, ... properties];
@@ -73,3 +81,25 @@ export function Field(){
         Reflect.defineMetadata(DESIGN_META_DATA.ENTITY, propertiesPlus, args[0]);
     }
 }
+
+export class DynamicAccessMode{
+    static READ  = 'READ';
+    static WRITE = 'WRITE';
+}
+
+export function DynamicAccess(modes: String | Array<String>){
+    let _modes:Array<String>;
+    if(!Array.isArray(modes)){
+        _modes = [modes as String];
+    }else{
+        _modes = modes as Array<String>;
+    }
+
+    return function(... args : any[]): void {
+        let prototype = args[0];
+        let property = args[1];
+        Reflect.defineMetadata(DESIGN_META_DATA.FIELD_DYNAMIC_ACCESS_MODE, _modes, prototype, property);
+    }
+}
+
+

@@ -32,15 +32,15 @@ const REQUEST_METHOD = {
     PATCH : 'PATCH',// UPDATE
     DELETE : 'DELETE'
 };
+
 export class RequestMethod{
     static OPTIONS = 'OPTIONS';
     static GET  =  'GET';
-    static  POST  = 'POST';
-    static  PUT  = 'PUT';
-    static  PATCH  = 'PATCH';
-    static  DELETE = 'DELETE';
+    static POST  = 'POST';
+    static PUT  = 'PUT';
+    static PATCH  = 'PATCH';
+    static DELETE = 'DELETE';
 }
-
 
 export function Service(mapping:{ name?: string, path: string | Array<string>, config?:object, models?: Array<any>}) {
 	return function(... args : any[]): void {
@@ -59,99 +59,6 @@ export function Service(mapping:{ name?: string, path: string | Array<string>, c
 	    Reflect.defineMetadata(DESIGN_META_DATA.SERVICE, serviceWrapper, args[0]);
 	}
 }
-/* move to injection
-export function Config(configKey?:string) {
-    return function(target: any, property: string): void {
-        if(!configKey){
-            configKey = property;
-        }
-
-        // property value
-        // var _val = target[property];
-
-        // property getter
-        let getter = function () {
-            let config  = Reflect.getMetadata(DESIGN_META_DATA.CONFIG, target.constructor);
-            if(!config){
-				console.log('\n'+`Config "${property}" of ${target.name} has not initiated.`);
-				console.log(`Please check class ${target.name} and config into scanner App.`+'\n');
-				return undefined;
-			}
-			let value = config[configKey as string];
-			if(!value && (configKey as string).indexOf('.') > -1){
-				let configKeys = (configKey as string).split('.');
-				value = config;
-				for(let key of configKeys) {
-					value = value[key];
-					if(!value){
-						break;
-					}
-				}
-			}
-			return value;
-        };
-
-        // property setter
-        let setter = function (newVal:any) {
-            throw Error('Can not change config value');
-        };
-
-        // Delete property.
-        if (delete target[property]) {
-
-            // Create new property with getter and setter
-            Object.defineProperty(target, property, {
-                get: getter,
-                set: setter,
-                enumerable: true,
-                configurable: true
-            });
-        }
-    }
-}
-*/
-/* move to injection
-export function Autowired(target : any, property : string) {
-    let autowiredPropertyNames: Array<Object> = Reflect.getMetadata(DESIGN_META_DATA.AUTOWIRED, target) || [];
-    autowiredPropertyNames.push(property);
-    Reflect.defineMetadata(DESIGN_META_DATA.AUTOWIRED, autowiredPropertyNames, target);
-
-    let t: any = Reflect.getMetadata("design:typeinfo", target, property).type();
-    let obj = beanContext[t.name];
-    if(!(obj instanceof t)){
-        obj = new t();
-        beanContext[t.name] = obj;
-    }
-
-    let getter = function () {
-        return obj;
-    };
-    // property setter
-    let setter = function (newVal: any) {
-        throw Error('Can not change config value');
-    };
-
-    // Delete property.
-    if (delete target[property]) {
-
-        // Create new property with getter and setter
-        Object.defineProperty(target, property, {
-            get: getter,
-            set: setter,
-            enumerable: true,
-            configurable: true
-        });
-    }
-}
-
-*/
-
-// move to gota core
-// export function PostInit(target : any, methodName : string) {
-//     let postInitMethodNames: Array<Object> = Reflect.getMetadata(DESIGN_META_DATA.POST_INIT, target) || [];
-//     postInitMethodNames.push(methodName);
-//     Reflect.defineMetadata(DESIGN_META_DATA.POST_INIT, postInitMethodNames, target);
-// }
 
 export function ServiceMapping(mapping:{name?: string, path : string | Array<string>, requestMethod?: string | Array<string>} ) {
     return function(... args : any[]): void {
@@ -175,19 +82,6 @@ export function ServiceMapping(mapping:{name?: string, path : string | Array<str
 
     //return Reflect.metadata(DESIGN_META_DATA.SERVICE_MAPPING, functionWrapper);
 }
-// move to gota core
-// export function AwaitedType(clazz:Function|string) {
-//     return function(... args : any[]): void {
-//         let typeInfo = Reflect.getMetadata("design:typeinfo", args[0], args[1]);
-//         typeInfo.awaitedType = clazz;
-//         Reflect.defineMetadata("design:typeinfo", typeInfo, args[0], args[1]);
-//     }
-//
-//
-//
-//
-//     //return Reflect.metadata(DESIGN_META_DATA.SERVICE_MAPPING, functionWrapper);
-// }
 
 //https://blogs.msdn.microsoft.com/typescript/2015/04/30/announcing-typescript-1-5-beta/
 //http://blog.wolksoftware.com/decorators-metadata-reflection-in-typescript-from-novice-to-expert-part-3

@@ -2,6 +2,8 @@ import "reflect-metadata";
 import {DAO} from "../gota-dao/index";
 import {Helper} from "../gota-core/index";
 import {EntityContainer} from "../gota-dao/decorator";
+import {RequestMethod} from "../gota-service/index";
+import {DynamicAccessMode} from "../gota-dao/decorator";
 
 const DESIGN_META_DATA = {
     APP : 'design:meta:data:key:app',
@@ -254,20 +256,30 @@ export default class Booter {
     private static buildAOptionSummary(url:string, object:any){
         let returnObject = {url:url};
         let schema =[]
-        Object.keys(object).forEach(key =>{
-            let responseType:any = object[key]['awaitedType'] || object[key]['returnType'] || 'String';
+        Object.keys(object).forEach(requestMethod =>{
+            let responseType:any = object[requestMethod]['awaitedType'] || object[requestMethod]['returnType'] || 'String';
             let requestData:{path?: any[], headers?: any[], query?: any[], body?: any[]} = {};
-            object[key]['requestInformation'].forEach(item => {
+            object[requestMethod]['requestInformation'].forEach(parameterWrapper => {
 
                 let parameterColection:Array<{name:string, type: String}>;
-                let declaredProperties:Array<{name:string, type: Function}>;
+                let declaredProperties:Array<{name:string, type: Function, dynamicAccessMode?:Array<String>}>;
 
-                if([DESIGN_META_DATA.HEADERS, DESIGN_META_DATA.QUERY, DESIGN_META_DATA.BODY].includes(item.designMetaData)){
-                    declaredProperties = Helper.findDeclaredProperties(item.type);
+                if([DESIGN_META_DATA.HEADERS, DESIGN_META_DATA.QUERY, DESIGN_META_DATA.BODY].includes(parameterWrapper.designMetaData)){
+                    declaredProperties = Helper.findDeclaredProperties(parameterWrapper.type);
+                    //Filter for Dynamic Access
+                    if([RequestMethod.POST, RequestMethod.PUT].includes(requestMethod)){
+                        declaredProperties = declaredProperties.filter(declaredProperty => {
+                            return !declaredProperty.dynamicAccessMode || (declaredProperty.dynamicAccessMode as Array<String>).includes(DynamicAccessMode.WRITE);
+                        });
+                    }else if(requestMethod === RequestMethod.GET){
+                        declaredProperties = declaredProperties.filter(declaredProperty => {
+                            return !declaredProperty.dynamicAccessMode || (declaredProperty.dynamicAccessMode as Array<String>).includes(DynamicAccessMode.READ);
+                        });
+                    }
                 }else{
-                    declaredProperties = [{name: item.name, type:item.type}];
+                    declaredProperties = [{name: parameterWrapper.name, type:parameterWrapper.type}];
                 }
-                switch (item.designMetaData){
+                switch (parameterWrapper.designMetaData){
                     case DESIGN_META_DATA.PATH_PARAMETER:
                         parameterColection = requestData.path = requestData.path || [];
                         break;
@@ -293,10 +305,10 @@ export default class Booter {
                     }
                 });
 
-                if(typeof item.type === 'function'){
-                    let childSchema = Helper.collectSchema(item.type);
+                if(typeof parameterWrapper.type === 'function'){
+                    let childSchema = Helper.collectSchema(parameterWrapper.type);
                     if(childSchema.length>0){
-                        schema.push(childSchema);
+                        schema.push(...childSchema);
                     }
                 }
             });
@@ -316,7 +328,7 @@ export default class Booter {
                 }
             }
             schema.push(...returnSchema);
-            returnObject[key] =
+            returnObject[requestMethod] =
                 {
                     requestData:requestData,
                     responseType: responseType.name || responseType
@@ -324,13 +336,13 @@ export default class Booter {
         });
         
 
-        returnObject['schema'] = schema;
+        returnObject['schema'] = schema.filter((schemaItem, index) => index === schema.findIndex(item => item.name ===schemaItem.name));
         return returnObject;
     }
     private static bootSummaryService(server: any,path:string | string[],  optionServiceInformationList:any):void{
         let summary =[];
-        Object.keys(optionServiceInformationList).forEach(key =>{
-            summary.push(Booter.buildAOptionSummary(key,optionServiceInformationList[key]));
+        Object.keys(optionServiceInformationList).forEach(url =>{
+            summary.push(Booter.buildAOptionSummary(url,optionServiceInformationList[url]));
         });
 
         summary.forEach(s=>{
