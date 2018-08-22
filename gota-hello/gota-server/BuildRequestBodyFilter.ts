@@ -26,7 +26,7 @@ function getFileContentType(buffer) {
      return value;
 }
 
-function parseApplicationFormUrlEncoded(buffer){
+function buildApplicationFormUrlEncoded(buffer){
      let body = {};
      let bufferLength = buffer.length;
      let sliceCharacters = '&';
@@ -42,7 +42,7 @@ function parseApplicationFormUrlEncoded(buffer){
 }
 
 
-function parseMultiPartFormData(buffer){
+function buildMultiPartFormData(buffer){
      // https://www.stsbd.com/how-to-upload-large-images-optimally/
      // http://www.javascriptexamples.info/search/upload-file-to-server-javascript/1
      // http://igstan.ro/posts/2009-01-11-ajax-file-upload-with-pure-javascript.html
@@ -87,24 +87,7 @@ function parseMultiPartFormData(buffer){
      return body;
 }
 
-
-function parseQuery(request){
-     if(request.url.indexOf('?')>-1){
-          let query = request.query || {};
-          let components = request.url.substring(request.url.indexOf('?')+1);
-          components = components.split('&');
-          components.forEach(component =>{
-               let name = component.split('=')[0];
-               let value = component.split('=')[1];
-               name = decodeURIComponent(name);
-               value = decodeURIComponent(value);
-               query[name] = value;
-          });
-          request.query = query
-     }
-}
-
-function parseContent(request, response){
+function buildBodyData(request, response){
      let buffer = request.body;
      if(buffer.length>0){
           let body = buffer;
@@ -112,9 +95,9 @@ function parseContent(request, response){
           try {
                if(requestContentType){
                     if (requestContentType === 'application/x-www-form-urlencoded') {
-                         body = parseApplicationFormUrlEncoded(buffer);
+                         body = buildApplicationFormUrlEncoded(buffer);
                     } else if (requestContentType.indexOf('multipart/form-data') > -1) {
-                         body = parseMultiPartFormData(buffer);
+                         body = buildMultiPartFormData(buffer);
                     } else if(requestContentType.indexOf('application/json') > -1){
                          body = buffer.toString(encode);
                          body = JSON.parse(body);
@@ -131,10 +114,9 @@ function parseContent(request, response){
           }
      }
 }
-export class ParseRequestBodyFilter implements ServerFilter{
+export class BuildRequestBodyFilter implements ServerFilter{
      async doFilter(request: any, response: any, next: Function){
-          parseQuery(request);
-          parseContent(request, response);
+          buildBodyData(request, response);
           //
           await next();
      }

@@ -2,12 +2,14 @@ import { Server } from "http";
 import  * as http from "http";
 
 import * as fs from "fs";
-import Helper from "../gota-core/Helper";
+import {Helper} from "../gota-core/index";
 import {ServerFilter} from "./ServerFilter";
 import {ServerFilterContainer} from "./ServerFilterContainer";
 import {ServerFilterWrapper} from "./ServerFilterWrapper";
 import {FileWrapper} from "./FileWrapper";
-import { ParseRequestBodyFilter } from "./ParseRequestBodyFilter";
+import { BuildRequestBodyFilter } from "./BuildRequestBodyFilter";
+import {BuildRequestQueryFilter} from "./BuildRequestQueryFilter";
+import {BuildArgumentValuesFilter} from "./BuildArgumentValuesFilter";
 const hostname = '127.0.0.1';
 const port = 3000;
 const encode = 'utf8';
@@ -43,105 +45,11 @@ const REQUEST_METHOD = {
 };
 
 
-interface ParameterWrapper {
-    designMetaData: string,//Query, Path, Body
-    name: string,
-    type: any
-}
-
 //class User {
 //    lastName: string;
 //    firstName: string;
 //}
 
-class ParseError extends Error {
-    sourceValue: any;
-    targetType: Function;
-    constructor(sourceValue: any, targetType: Function){
-        super(`Can not parse value: ${sourceValue}' - ${JSON.stringify(sourceValue)} to ${targetType.name}`);
-        this.targetType = targetType;
-        this.sourceValue = sourceValue;
-    }
-}
-
-const converter = {
-    stringToBoolean: function (source) {
-        if(isNaN(source)){
-            return ['true','yes','on'].includes(source.toLowerCase());
-        }else{
-            return +source > 0; // true <- 1,2,3, ..., false <- 0, -1, -2, ...
-        }
-    },
-    stringToNumber: function (source) {
-        if(isNaN(source)){
-            return 0;
-        }else{
-            return +source;
-        }
-    },
-    stringToDate: function (source) {
-        if(isNaN(source)){
-            // 'Wed Aug 08 2018 13:54:13' <= (new Date()).getToString()
-            return new Date(source);
-        }else{
-            // 1533710985865 <= (new Date()).getTime()
-            return new Date(+source);
-        }
-    },
-    numberToDate: function (source) {
-        return new Date(source);
-    },
-    numberToString: function (source) {
-        return source+'';
-    },
-    numberToBoolean: function (source) {
-        return source > 0;
-    },
-    booleanToString: function (source) {
-        return source+'';
-    },
-    booleanToNumber: function (source) {
-        return source ? 1 : 0;
-    },
-    fileWrapperToFile:  function (fileWrapper) {
-        return fileWrapper;
-    }
-}
-
-function parseValue(value, type){
-    let val = value;
-    if(type){
-        if(val && val.constructor !== type){
-            try{
-                let parser = converter[val.constructor.name[0].toLowerCase()+val.constructor.name.substring(1) +'To'+type.name];
-                if(!parser){
-                    //const isClass = v => typeof v === 'function' && /^\s*class\s+/.test(v.toString())
-                    if (typeof type === 'function' && /^\s*class\s+/.test(type.toString())){
-                        let object = new type();
-                        if(typeof val === 'string'){
-                            val = JSON.parse(val);
-                        }
-
-                        Object.keys(val).forEach(key=>{
-                            object[key] = parseValue(val[key], Helper.getTypeProperty(type, key));
-                        })
-                        val = object;
-                    }else {
-                        throw new ParseError(val, type);
-                    }
-                }else {
-                    val = parser(val);
-                }
-
-            }catch (err){
-                console.log(err.message);
-                throw new ParseError(val, type);
-            }
-        }
-    }
-
-    return val;
-}
 
 
 /*
@@ -248,7 +156,10 @@ export class GotaServer{
     private server: Server;
     constructor(){
         //
-        this.addFilter(new ParseRequestBodyFilter());
+        this.addFilter(new BuildRequestQueryFilter());
+        this.addFilter(new BuildRequestBodyFilter());
+        this.addFilter(new BuildArgumentValuesFilter());
+        //
         this.addFilter(new TestFilter());
         this.addFilter(new TestFilter2());
 
@@ -275,95 +186,26 @@ export class GotaServer{
             request.on('end', async () => {
                 // console.log('No more data');
                 request.body = buffer;
-                // parse path {
                 request.path =  request.url.substring(0, request.url.indexOf('?') > -1 ? request.url.indexOf('?') : undefined);
+                // build pathParameters and find serviceExecutor in executorContainer
                 let executorInformation = this.executorContainer.findExecutorInformation(request.path, request.method);
-
                 if(executorInformation === undefined){
                     response.statusCode = 404;
                     response.setHeader('Content-Type', 'text/plain');
                     response.end('Not Found\n');
                     return;
                 }
-
                 request.pathParameters = executorInformation.pathParameters;
                 request.serviceExecutor = executorInformation.executor;
+
                 await this.serverFilterContainer.executeFilters(request, response);
 
-
-                let parameterWrappers: Array<ParameterWrapper> = executorInformation.executor.arguments;
-                let execute = executorInformation.executor.method;
-                let context =  executorInformation.executor.context;
-                // build agrs {
-                let parameterValues: Array<any>;
-                if(Array.isArray(parameterWrappers)){
-                    parameterValues = [];
-                    parameterWrappers.forEach(parameterWrapper => {
-                        let value = undefined;
-                        try{
-                            switch(parameterWrapper.designMetaData){
-                                case DESIGN_META_DATA.PATH_PARAMETER :
-                                    value = request.pathParameters[parameterWrapper.name];
-                                    break;
-                                case DESIGN_META_DATA.REQUEST :
-                                    value = request;
-                                    break;
-                                case DESIGN_META_DATA.RESPONSE :
-                                    value = response;
-                                    break;
-                                case DESIGN_META_DATA.QUERY :
-                                    value = request.query || {};
-                                    break;
-                                case DESIGN_META_DATA.QUERY_PARAMETER :
-                                    value = request.query ? request.query[parameterWrapper.name]: undefined;
-                                    break;
-                                case DESIGN_META_DATA.BODY :
-                                    value = request.body || {};
-                                    break;
-                                case DESIGN_META_DATA.BODY_PARAMETER :
-                                    value = request.body? request.body[parameterWrapper.name]: undefined;
-                                    break;
-                                case DESIGN_META_DATA.HEADERS :
-                                    let headers = request.headers || {};
-                                    value = {};
-                                    Object.keys(headers).forEach(key =>{
-                                        let lowerCamelCaseKey = key.replace(/\-[0-9a-zA-Z]/g, (match, offset, string) => {
-                                            return (offset ? match.charAt(1).toUpperCase() :  match.charAt(1).toLowerCase());
-                                        });
-                                        value[lowerCamelCaseKey] = headers[key];
-                                    });
-
-                                    break;
-                                case DESIGN_META_DATA.HEADERS_PARAMETER :
-                                    let argLowerCase = parameterWrapper.name.replace(/[A-Z]/g, (match, offset, string) => {
-                                        return (offset ? '-' : '') + match.toLowerCase();
-                                    });
-                                    value =  request.headers[argLowerCase];
-                                    break;
-                            }
-                            if(typeof parameterWrapper['parser'] === 'function'){
-                                value = parameterWrapper['parser'](value);
-                            }else{
-                                value = parseValue(value, parameterWrapper.type);
-                            }
-
-                        }catch (err){
-                            if(err instanceof ParseError){
-                                console.log(err.message);
-                                console.log('class: '+ context ? context.constructor.name:'');
-                                console.log('method: '+ execute ? execute.name:'');
-                                console.log('arg: '+ parameterWrapper.name);
-                            }
-                            throw err;
-
-                        }
-
-                        parameterValues.push(value);
-                    })
-                }
-                // } build agrs
                 try {
-                    let result = await Promise.resolve(execute.apply(context, parameterValues));
+                    let execute = executorInformation.executor.method;
+                    let context =  executorInformation.executor.context;
+                    let argValues = request.argumentValues;
+
+                    let result = await Promise.resolve(execute.apply(context, argValues));
                     if(result instanceof FileWrapper){
                         response.setHeader('Content-Type', result.type);
                         response.setHeader('Content-Disposition', 'attachment; filename='+result.name);
