@@ -450,17 +450,32 @@ export default class Booter {
             search: async function (query){
                 if(query) {
                     query =JSON.parse(JSON.stringify(query));
-                    Object.keys(query).forEach(key => {
-                        if (query[key] && query[key].startsWith('$regex:')) {
-                            let regexValue = query[key].substring('$regex:'.length).trim();
+                    Object.keys(query).forEach(queryParam => {
+                        let queryValue = query[queryParam];
+
+                        if (queryValue && typeof queryValue.startsWith === 'function' &&  queryValue.startsWith('$regex:')) {
+                            let regexValue = queryValue.substring('$regex:'.length).trim();
                             regexValue = unUnitName(regexValue);
-                            query[key] = {
+                            query[queryParam] = {
                                 $regex: new RegExp(regexValue, 'i')
                             }
                         }
+
+                        let prefixSuffixAndPropertyItem: {prefix: String, suffix: String, property: String} = Helper.separatePrefixSuffixAndPropertyItem(queryParam);
+                        let newQueryParam = prefixSuffixAndPropertyItem.property;
+                        let prefix = prefixSuffixAndPropertyItem.prefix;
+                        let suffix = prefixSuffixAndPropertyItem.suffix;
+
+                        if(prefix || suffix){
+                            query[queryParam] = undefined;
+                            let regexName = queryParam.substring(0, queryParam.lastIndex('$'));//$gte
+
+                            query[newQueryParam] = query[newQueryParam] || {};
+                            query[newQueryParam][regexName]= queryValue; //{field: {$gte: value} }
+                        }
                     });
                 }
-
+                query =JSON.parse(JSON.stringify(query));
                 let t = await dao.search(query);
                 return t;
             },

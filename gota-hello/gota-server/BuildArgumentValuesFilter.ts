@@ -100,15 +100,24 @@ function parseValue(value, type){
                     if(!parser){
                          //const isClass = v => typeof v === 'function' && /^\s*class\s+/.test(v.toString())
                          if (typeof type === 'function' && /^\s*class\s+/.test(type.toString())){
-                              let object = {};
                               if(typeof val === 'string'){
                                    val = JSON.parse(val);
                               }
+                              let object = new type();
+                              //clear auto created properties by constructor
+                              Object.keys(object).forEach(property => {
+                                   object[property] = undefined;
+                              });
 
-                              Object.keys(val).forEach(key=>{
-                                   object[key] = parseValue(val[key], Helper.getTypeProperty(type, key));
+                              Object.keys(val).forEach(requestProperty => {
+                                   let classProperty = requestProperty;
+                                   if(requestProperty.charAt(0)==='$' && requestProperty.indexOf(':') > 0){
+                                        //ex: classProperty === address.geographic.latitude <= requestProperty === $gte:address.geographic.latitude
+                                        classProperty = requestProperty.substring(requestProperty.indexOf(':')+1);
+                                   }
+                                   object[requestProperty] = parseValue(val[requestProperty], Helper.getTypeProperty(type, classProperty));
                               })
-                              val = new type(object);
+                              val = object;
                          }else {
                               throw new ParseError(val, type);
                          }
