@@ -469,7 +469,7 @@ export default class Booter {
                         if(prefix || suffix){
                             query[queryParam] = undefined;
                             let regexName = queryParam.substring(0, queryParam.lastIndex('$'));//$gte
-
+                            //TODO TODO
                             query[newQueryParam] = query[newQueryParam] || {};
                             query[newQueryParam][regexName]= queryValue; //{field: {$gte: value} }
                         }
