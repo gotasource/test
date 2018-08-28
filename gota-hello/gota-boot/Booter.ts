@@ -429,37 +429,32 @@ export default class Booter {
             }
             );
 
-        let unUnitName = function (str: string): string{
-            var re = new RegExp(/./g)
-            str = str.toLowerCase();
-            str = str.replace(/!|@|%|\^|\*|\(|\)|\+|\=|\<|\>|\?|\/|,|\.|\:|\;|\'|\"|\&|\#|\[|\]|~|\$|_|`|-|{|}|\||\\/g," ");
-            str = str.replace(/a|à|á|ạ|ả|ã|â|ầ|ấ|ậ|ẩ|ẫ|ă|ằ|ắ|ặ|ẳ|ẵ/g,'(a|à|á|ạ|ả|ã|â|ầ|ấ|ậ|ẩ|ẫ|ă|ằ|ắ|ặ|ẳ|ẵ)');
-            str = str.replace(/e|è|é|ẹ|ẻ|ẽ|ê|ề|ế|ệ|ể|ễ/g,'(e|è|é|ẹ|ẻ|ẽ|ê|ề|ế|ệ|ể|ễ)');
-            str = str.replace(/i|ì|í|ị|ỉ|ĩ/g,'(i|ì|í|ị|ỉ|ĩ)');
-            str = str.replace(/o|ò|ó|ọ|ỏ|õ|ô|ồ|ố|ộ|ổ|ỗ|ơ|ờ|ớ|ợ|ở|ỡ/g,'(o|ò|ó|ọ|ỏ|õ|ô|ồ|ố|ộ|ổ|ỗ|ơ|ờ|ớ|ợ|ở|ỡ)');
-            str = str.replace(/u|ù|ú|ụ|ủ|ũ|ư|ừ|ứ|ự|ử|ữ/g,'(u|ù|ú|ụ|ủ|ũ|ư|ừ|ứ|ự|ử|ữ)');
-            str = str.replace(/y|ỳ|ý|ỵ|ỷ|ỹ/g,'(y|ỳ|ý|ỵ|ỷ|ỹ)');
-            str = str.replace(/d|đ/g,'(d|đ)');
 
-            str = str.trim();
-            str = str.replace(/ +/g,"(.*)");
-            return str;
-        }
 
         let executes = {
             search: async function (query){
+                function regexFormat(value){
+                    if (value && typeof value.startsWith === 'function' &&  value.startsWith('$regex:')) {
+                        let regexValue = value.substring('$regex:'.length).trim();
+                        regexValue = Helper.searchVNStringRegexFormat(regexValue);
+                        //value = {
+                        //    $regex: new RegExp(regexValue, 'i')
+                        //}
+
+                        value = new RegExp(regexValue, 'i');
+                    }
+                    return value;
+                }
                 if(query) {
                     query =JSON.parse(JSON.stringify(query));
                     Object.keys(query).forEach(queryParam => {
                         let queryValue = query[queryParam];
-
-                        if (queryValue && typeof queryValue.startsWith === 'function' &&  queryValue.startsWith('$regex:')) {
-                            let regexValue = queryValue.substring('$regex:'.length).trim();
-                            regexValue = unUnitName(regexValue);
-                            queryValue = {
-                                $regex: new RegExp(regexValue, 'i')
-                            }
+                        if(Array.isArray(queryValue)){
+                            queryValue = queryValue.map(val => regexFormat(val));
+                        }else{
+                            queryValue = regexFormat(queryValue);
                         }
+
 
                         query[queryParam] = queryValue;
                         let prefixSuffixAndPropertyItem: {prefix: String, suffix: String, property: String} = Helper.separatePrefixSuffixAndPropertyItem(queryParam);//$or:address.geographic.latitude$gte

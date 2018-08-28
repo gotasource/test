@@ -12,12 +12,12 @@ function buildQueryData(request){
                let value = component.split('=')[1];
                name = decodeURIComponent(name);
                value = decodeURIComponent(value);
-               if(!query[name]){
-                    query[name] = value;
-               }else if(Array.isArray(query[name])){
+               if(name.endsWith('[]')){
+                    name = name.substring(0, name.length - '[]'.length);
+                    query[name] =  query[name] || [];
                     query[name].push(value);
                }else{
-                    query[name] = [query[name], value];
+                    query[name] = value;
                }
           });
           request.query = query
