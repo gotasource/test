@@ -456,26 +456,44 @@ export default class Booter {
                         if (queryValue && typeof queryValue.startsWith === 'function' &&  queryValue.startsWith('$regex:')) {
                             let regexValue = queryValue.substring('$regex:'.length).trim();
                             regexValue = unUnitName(regexValue);
-                            query[queryParam] = {
+                            queryValue = {
                                 $regex: new RegExp(regexValue, 'i')
                             }
                         }
 
-                        let prefixSuffixAndPropertyItem: {prefix: String, suffix: String, property: String} = Helper.separatePrefixSuffixAndPropertyItem(queryParam);
-                        let newQueryParam = prefixSuffixAndPropertyItem.property;
-                        let prefix = prefixSuffixAndPropertyItem.prefix;
-                        let suffix = prefixSuffixAndPropertyItem.suffix;
+                        query[queryParam] = queryValue;
+                        let prefixSuffixAndPropertyItem: {prefix: String, suffix: String, property: String} = Helper.separatePrefixSuffixAndPropertyItem(queryParam);//$or:address.geographic.latitude$gte
+                        let newQueryParam = prefixSuffixAndPropertyItem.property;//address.geographic.latitude
+                        let prefix = prefixSuffixAndPropertyItem.prefix;// $or
+                        let suffix = prefixSuffixAndPropertyItem.suffix;//$gte
 
-                        if(prefix || suffix){
-                            query[queryParam] = undefined;
-                            let regexName = queryParam.substring(0, queryParam.lastIndex('$'));//$gte
-                            //TODO TODO
-                            query[newQueryParam] = query[newQueryParam] || {};
-                            query[newQueryParam][regexName]= queryValue; //{field: {$gte: value} }
+                        if(newQueryParam !== queryParam){
+                            delete(query[queryParam]);// = undefined;
+
+                            let suffixObject;
+                            if(suffix){
+                                suffixObject = {};
+                                suffixObject[suffix as string] = queryValue;//{$gte: 0.99}
+                            }
+                            let propertyObject;
+                            propertyObject = {};
+                            propertyObject[newQueryParam as string] = suffixObject || queryValue; //  { price : {$gte: 0.99} } || { price : 0.99 }
+                            if(prefix){
+                                query[prefix as string] =  query[prefix as string] || [];
+                                query[prefix as string].push(propertyObject);
+                            }else{
+                                if(typeof query[newQueryParam as string] === 'object'){
+                                    query[newQueryParam as string] = Object.assign(query[newQueryParam as string], propertyObject[newQueryParam as string]);
+                                }else {
+                                    query = Object.assign(query, propertyObject);
+                                }
+
+                            }
                         }
+
                     });
                 }
-                query =JSON.parse(JSON.stringify(query));
+                // query =JSON.parse(JSON.stringify(query));
                 let t = await dao.search(query);
                 return t;
             },

@@ -105,24 +105,26 @@ function getTypeProperty(clazz: Function, propertyName: String){
     return _clazz;
 }
 
+
+// $and:address.geographic.latitude$gte => {prefix: $and, suffix: $gte, property: address.geographic.latitude}
 function separatePrefixSuffixAndPropertyItem(requestProperty: String): {prefix: String, suffix: String, property: String}{
     let prefix, suffix, property;
-
-    let firstIndexColonSign = queryParam.indexOf(':');
-    if( queryParam.indexOf('$') ===0 && < firstIndexColonSign > 0){// ex: end with $and of $and:address.geographic.latitude
+    //find  prefix
+    let firstIndexColonSign = requestProperty.indexOf(':');
+    if( requestProperty.indexOf('$') ===0 && firstIndexColonSign > 0){// ex: end with $and of $and:address.geographic.latitude
         prefix = requestProperty.substring(0, firstIndexColonSign);
         requestProperty = requestProperty.substring(firstIndexColonSign + 1);
     }
-
+    //find suffix
     let lastIndexDollarSign  = requestProperty.lastIndexOf('$');
     let lastIndexColonSign = requestProperty.lastIndexOf(':');
-    if( lastIndexDollarSign > lastIndexColonSign(':')){// ex: end with $gte of address.geographic.latitude$gte
+    if( lastIndexDollarSign > lastIndexColonSign ){// ex: end with $gte of address.geographic.latitude$gte
         suffix = requestProperty.substring(lastIndexDollarSign);
-        requestProperty = requestProperty.substring(lastIndexDollarSign);
+        requestProperty = requestProperty.substring(0, lastIndexDollarSign);
     }
-
+    // property
     property = requestProperty;
-
+    //
     return {prefix, suffix, property};
 }
 

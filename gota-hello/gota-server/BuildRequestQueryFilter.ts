@@ -12,7 +12,13 @@ function buildQueryData(request){
                let value = component.split('=')[1];
                name = decodeURIComponent(name);
                value = decodeURIComponent(value);
-               query[name] = value;
+               if(!query[name]){
+                    query[name] = value;
+               }else if(Array.isArray(query[name])){
+                    query[name].push(value);
+               }else{
+                    query[name] = [query[name], value];
+               }
           });
           request.query = query
      }

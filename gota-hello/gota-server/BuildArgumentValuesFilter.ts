@@ -94,44 +94,43 @@ const converter = {
 function parseValue(value, type){
      let val = value;
      if(type){
-          if(val && val.constructor !== type){
-               try{
-                    let parser = converter[val.constructor.name[0].toLowerCase()+val.constructor.name.substring(1) +'To'+type.name];
-                    if(!parser){
-                         //const isClass = v => typeof v === 'function' && /^\s*class\s+/.test(v.toString())
-                         if (typeof type === 'function' && /^\s*class\s+/.test(type.toString())){
-                              if(typeof val === 'string'){
-                                   val = JSON.parse(val);
-                              }
-                              let object = new type();
-                              //clear auto created properties by constructor
-                              Object.keys(object).forEach(property => {
-                                   object[property] = undefined;
-                              });
-
-                              Object.keys(val).forEach(requestProperty => {
-                                   let classProperty = requestProperty;
-                                   if(requestProperty.charAt(0)==='$' && requestProperty.indexOf(':') > 0){
-                                        //ex: classProperty === address.geographic.latitude <= requestProperty === $gte:address.geographic.latitude
-                                        classProperty = requestProperty.substring(requestProperty.indexOf(':')+1);
+          if(Array.isArray(val)){
+               val = val.map(item =>  parseValue(item, type));
+          }else{
+               if(val && val.constructor !== type){
+                    try{
+                         let parser = converter[val.constructor.name[0].toLowerCase()+val.constructor.name.substring(1) +'To'+type.name];
+                         if(!parser){
+                              //const isClass = v => typeof v === 'function' && /^\s*class\s+/.test(v.toString())
+                              if (typeof type === 'function' && /^\s*class\s+/.test(type.toString())){
+                                   if(typeof val === 'string'){
+                                        val = JSON.parse(val);
                                    }
-                                   object[requestProperty] = parseValue(val[requestProperty], Helper.getTypeProperty(type, classProperty));
-                              })
-                              val = object;
-                         }else {
-                              throw new ParseError(val, type);
-                         }
-                    }else {
-                         val = parser(val);
-                    }
+                                   let object = new type();
+                                   //clear auto created properties by constructor
+                                   Object.keys(object).forEach(property => {
+                                        object[property] = undefined;
+                                   });
 
-               }catch (err){
-                    console.log(err.message);
-                    throw new ParseError(val, type);
+                                   Object.keys(val).forEach(requestProperty => {
+                                        let classProperty = Helper.separatePrefixSuffixAndPropertyItem(requestProperty).property;
+                                        object[requestProperty] = parseValue(val[requestProperty], Helper.getTypeProperty(type, classProperty));
+                                   })
+                                   val = object;
+                              }else {
+                                   throw new ParseError(val, type);
+                              }
+                         }else {
+                              val = parser(val);
+                         }
+
+                    }catch (err){
+                         console.log(err.message);
+                         throw new ParseError(val, type);
+                    }
                }
           }
      }
-
      return val;
 }
 
