@@ -18,7 +18,9 @@ const DESIGN_META_DATA = {
     BODY : 'design:meta:data:key:body',
     BODY_PARAMETER : 'design:meta:data:key:body:parameter',
     HEADERS : 'design:meta:data:key:headers',
-    HEADERS_PARAMETER : 'design:meta:data:key:headers:parameter'
+    HEADERS_PARAMETER : 'design:meta:data:key:headers:parameter',
+    DAO_OF_MODEL: 'design:meta:data:key:dao:of:model',
+    MODEL_OF_DAO: 'design:meta:data:key:model:of:dao'
 };
 
 const REQUEST_METHOD = {
@@ -95,15 +97,23 @@ export function Autowired(target : any, property : string) {
     autowiredPropertyNames.push(property);
     Reflect.defineMetadata(DESIGN_META_DATA.AUTOWIRED, autowiredPropertyNames, target);
 
-    let t: any = Reflect.getMetadata("design:typeinfo", target, property).type();
-    let obj = BeanContext.getBean(t.name);
-    if(!(obj instanceof t)){
-        obj = new t();
-        BeanContext.setBean(t.name, obj);
+    let type: any = Reflect.getMetadata("design:typeinfo", target, property).type();
+    let beanName = type.name;// ('CustomType' !== type.name)? type.name : type.originalType.name
+
+    let bean = BeanContext.getBean(beanName);
+    if(!(bean instanceof type)){
+        bean = new type();
+        let modelType =  Reflect.getMetadata(DESIGN_META_DATA.MODEL_OF_DAO, type);
+        if(modelType){
+            bean.collectionName = modelType.name.replace(/[A-Z]/g, (match, offset, string) => {
+                return (offset ? '_' : '') + match.toLowerCase();
+            });
+        }
+        BeanContext.setBean(beanName, bean);
     }
 
     let getter = function () {
-        return obj;
+        return bean;
     };
     // property setter
     let setter = function (newVal: any) {
@@ -123,4 +133,4 @@ export function Autowired(target : any, property : string) {
     }
 }
 
-// export { BeanContext }
+export { BeanContext }

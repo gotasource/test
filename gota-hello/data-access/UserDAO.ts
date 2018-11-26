@@ -1,9 +1,10 @@
 import {SiteInfo} from "../models/SiteInfo";
 import {MongoDataAccess} from "../gota-dao/index";
 import { DAO } from "../gota-dao/decorator";
+import { User } from "../models/User";
 
-@DAO(SiteInfo)
-export class SiteInfoDAO extends MongoDataAccess<SiteInfo> {
+@DAO(User)
+export class UserDAO extends MongoDataAccess<User> {
     constructor() {
         super(null);
     }

@@ -1,7 +1,7 @@
 import {Category} from "../models/Category";
-import {DAO} from "../gota-dao/index";
+import {MongoDataAccess} from "../gota-dao/index";
 
-export class CategoryDAO extends DAO<Category> {
+export class CategoryDAO extends MongoDataAccess<Category> {
     constructor() {
         super(Category);
     }

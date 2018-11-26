@@ -2,7 +2,7 @@
 import {GotaApp, GotaBoot} from "./gota-boot";
 //import {SiteInfo} from "./models/SiteInfo";
 import {SiteInfoService} from "./service/SiteInfoService";
-import {Connection} from "./gota-dao/Connection";
+import {MongoConnection} from "./gota-dao/MongoConnection";
 import {ProductService} from "./service/ProductService";
 import {UserService} from "./service/UserService";
 
@@ -45,16 +45,28 @@ process.on('unhandledRejection', (...error) => {
 });
 
 @GotaApp({
-    scanner: [UserService, Connection],
+    scanner: [UserService, MongoConnection],
     config: {
         hostName : 'localhost',
         port: 3002,
         devMode:true,
         database: {
+            protocol:'mongodb+srv',
+            host: 'cluster0-g6wi8.gcp.mongodb.net/test?retryWrites=true',
+            user: 'admin',
+            password: 'iC2gjdMkgrjDwF03',
+            // options:{},
+            databaseName:'gota'
+        },
+/*
+        database: {
+            url: 'mongodb+srv://admin:iC2gjdMkgrjDwF03@cluster0-g6wi8.gcp.mongodb.net/test?retryWrites=true',
+            protocol:'mongodb',
             host: 'localhost',
             port: 27017,
-            databaseName:'gota'
+            databaseName:'gota',
         }
+        */
     }
 })
 class ProductApp{};

@@ -7,7 +7,7 @@ import {CategoryDAO} from "../data-access/CategoryDAO";
 import {Category} from "../models/Category";
 import {Product} from "../models/Product";
 import {ProductDAO} from "../data-access/ProductDAO";
-import {Connection} from "../gota-dao/Connection";
+import {MongoConnection} from "../gota-dao/MongoConnection";
 
 @Service({path:'/product-service' /*,models:[Category, Product]*/})
 export class ProductService{

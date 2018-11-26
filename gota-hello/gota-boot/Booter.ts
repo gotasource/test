@@ -1,9 +1,10 @@
 import "reflect-metadata";
-import {DAO} from "../gota-dao/index";
+import {MongoDataAccess} from "../gota-dao/index";
 import {Helper} from "../gota-core/index";
 import {EntityContainer} from "../gota-dao/decorator";
 import {RequestMethod} from "../gota-service/index";
 import {DynamicAccessMode} from "../gota-dao/decorator";
+import { BeanContext } from "../gota-injection";
 
 const DESIGN_META_DATA = {
     APP : 'design:meta:data:key:app',
@@ -21,7 +22,8 @@ const DESIGN_META_DATA = {
     BODY : 'design:meta:data:key:body',
     BODY_PARAMETER : 'design:meta:data:key:body:parameter',
     HEADERS : 'design:meta:data:key:headers',
-    HEADERS_PARAMETER : 'design:meta:data:key:headers:parameter'
+    HEADERS_PARAMETER : 'design:meta:data:key:headers:parameter',
+    DAO_OF_MODEL: 'design:meta:data:key:dao:of:model'
 };
 
 const REQUEST_METHOD = {
@@ -383,8 +385,8 @@ export default class Booter {
     }
 
     private static collectAModelServiceInformation(servicePath, model: any): Array<ServiceInformation> {
-        let dao = new DAO(model);
-        dao.initCollection();
+        let daoType = Reflect.getMetadata(DESIGN_META_DATA.DAO_OF_MODEL, model);
+        let dao = BeanContext.getBean(daoType.name);
         let modelPath = model.name.replace(/[A-Z]/g, (match, offset, string)=> {
             return (offset ? '-' : '') + match.toLowerCase();
         });

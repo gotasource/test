@@ -3,6 +3,8 @@ import {QueryParameter, RequestMethod, Service, ServiceMapping} from '../gota-se
 import {User} from "../models/User";
 import {Address} from "../models/Address";
 import {BodyParameter, Body} from "../gota-service/index";
+import { Autowired } from '../gota-injection';
+import { UserDAO } from '../data-access/UserDAO';
 
 function timeout(ms:number) {
     return new Promise(resolve => setTimeout(resolve, ms));
@@ -14,6 +16,8 @@ async function sleep(fn:Function, args:Array<string>) {
 
 @Service({path:'/user-service', models: [User]})
 export class UserService{
+    @Autowired
+    private userDAO: UserDAO;
     constructor(){
     }
 

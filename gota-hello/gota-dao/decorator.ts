@@ -2,6 +2,8 @@
 //https://rbuckton.github.io/reflect-metadata/#syntax
 import 'reflect-metadata'
 import { Helper } from "../gota-core/index";
+import { Model } from './Model';
+import { DataAccess } from './interface/DataAccess';
 
 const DESIGN_META_DATA = {
     APP : 'design:meta:data:key:app',
@@ -24,7 +26,9 @@ const DESIGN_META_DATA = {
     HEADERS_PARAMETER : 'design:meta:data:key:headers:parameter',
     ENTITY : 'design:meta:data:key:entity',
     ENTITY_CONTAINER : 'design:meta:data:key:entity:container',
-    FIELD_DYNAMIC_ACCESS_MODE : 'design:meta:data:key:field:dynamic:access:mode'
+    FIELD_DYNAMIC_ACCESS_MODE : 'design:meta:data:key:field:dynamic:access:mode',
+    DAO_OF_MODEL: 'design:meta:data:key:dao:of:model',
+    MODEL_OF_DAO: 'design:meta:data:key:model:of:dao'
 };
 
 const REQUEST_METHOD = {
@@ -102,4 +106,28 @@ export function DynamicAccess(modes: String | Array<String>){
     }
 }
 
+export function DAO<T extends { new(...args: any[]):  Model }>(entity: T){
+    return function(target: Function) {
+        var original = target;
+        Reflect.defineMetadata(DESIGN_META_DATA.DAO_OF_MODEL, target, entity);
+        Reflect.defineMetadata(DESIGN_META_DATA.MODEL_OF_DAO, entity, target);
+        /*
+        // the new constructor behaviour
+        var CustomType : any = function (...args) {
+            this.collectionName = entity.name.replace(/[A-Z]/g, (match, offset, string) => {
+                return (offset ? '_' : '') + match.toLowerCase();
+            });
+            return  original.constructor.apply(this, args)
+        }
+
+        // copy prototype so intanceof operator still works
+        CustomType.prototype = original.prototype;
+        CustomType.originalType = original;
+
+        // return new constructor (will override original)
+        return CustomType;
+        */
+
+    }
+}
 

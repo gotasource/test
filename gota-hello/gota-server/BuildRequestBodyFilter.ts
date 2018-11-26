@@ -50,8 +50,8 @@ function buildMultiPartFormData(buffer){
      let bufferLength = buffer.length;
      let sliceCharacters = '\r\n------';
      while (bufferLength > 0) {
-          let component = new Buffer(buffer.slice(0, buffer.indexOf(sliceCharacters)));
-          buffer = new Buffer(buffer.slice(component.length + sliceCharacters.length));
+          let component = Buffer.from(buffer.slice(0, buffer.indexOf(sliceCharacters)));
+          buffer = Buffer.from(buffer.slice(component.length + sliceCharacters.length));
           bufferLength = buffer.length;
           let name = getValueOfParam(component, 'name');
           if (name) {
@@ -62,7 +62,7 @@ function buildMultiPartFormData(buffer){
                     // console.log('filename:', fileName);
                     let contentType = getFileContentType(component);
                     // console.log('contenttype:', contentType);
-                    let content = new Buffer(component.slice((contentType + '\r\n\r\n').length + component.indexOf(contentType + '\r\n\r\n')));
+                    let content = Buffer.from(component.slice((contentType + '\r\n\r\n').length + component.indexOf(contentType + '\r\n\r\n')));
                     // console.log('content:', content.toString(encode));
 
                     body[name] = new FileWrapper(fileName, contentType, content);
