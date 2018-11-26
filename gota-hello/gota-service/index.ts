@@ -42,7 +42,7 @@ export class RequestMethod{
     static DELETE = 'DELETE';
 }
 
-export function Service(mapping:{ name?: string, path: string | Array<string>, config?:object, models?: Array<any>}) {
+export function Service(mapping:{ name?: string, path: string | Array<string>, config?:object}) {
 	return function(... args : any[]): void {
         // let serviceName = mapping.name;
         // if(!serviceName){

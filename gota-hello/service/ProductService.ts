@@ -9,7 +9,7 @@ import {Product} from "../models/Product";
 import {ProductDAO} from "../data-access/ProductDAO";
 import {MongoConnection} from "../gota-dao/MongoConnection";
 
-@Service({path:'/product-service' /*,models:[Category, Product]*/})
+@Service({path:'/product-service'})
 export class ProductService{
     @Autowired
     public categoryDAO: CategoryDAO;

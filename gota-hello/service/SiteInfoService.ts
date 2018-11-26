@@ -8,7 +8,7 @@ import {SiteInfo} from "../models/SiteInfo";
 import {SiteInfoDAO} from "../data-access/SiteInfoDAO";
 import {URL} from "url";
 
-@Service({path:'/site-service', models:[SiteInfo]})
+@Service({path:'/site-service'})
 export class SiteInfoService{
 
     @Autowired

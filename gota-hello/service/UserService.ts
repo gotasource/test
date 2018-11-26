@@ -14,7 +14,7 @@ async function sleep(fn:Function, args:Array<string>) {
     return fn(...args);
 }
 
-@Service({path:'/user-service', models: [User]})
+@Service({path:'/user-service'})
 export class UserService{
     @Autowired
     private userDAO: UserDAO;
