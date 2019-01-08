@@ -1,9 +1,7 @@
 import "reflect-metadata";
-import {MongoDataAccess} from "../gota-dao/index";
+import {MongoDataAccess, DynamicAccessMode, EntityContainer} from "../gota-dao/index";
 import {Helper} from "../gota-core/index";
-import {EntityContainer} from "../gota-dao/decorator";
 import {RequestMethod} from "../gota-service/index";
-import {DynamicAccessMode} from "../gota-dao/decorator";
 import { BeanContext } from "../gota-injection";
 
 const DESIGN_META_DATA = {

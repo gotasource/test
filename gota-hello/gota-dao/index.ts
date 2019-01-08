@@ -2,4 +2,4 @@
 export { MongoDataAccess } from "./MongoDataAccess";
 export { MongoConnection} from "./MongoConnection";
 export { Model } from "./Model";
-export { EntityContainer, Entity, Field, DynamicAccess, DynamicAccessMode } from "./decorator";
+export { EntityContainer, Entity, Field, DynamicAccess, DynamicAccessMode, DAO} from "./decorator";

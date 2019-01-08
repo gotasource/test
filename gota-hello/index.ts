@@ -45,7 +45,7 @@ process.on('unhandledRejection', (...error) => {
 });
 
 @GotaApp({
-    scanner: [UserService, MongoConnection],
+    scanner: [UserService],
     config: {
         hostName : 'localhost',
         port: 3002,

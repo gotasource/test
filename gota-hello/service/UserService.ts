@@ -5,6 +5,7 @@ import {Address} from "../models/Address";
 import {BodyParameter, Body} from "../gota-service/index";
 import { Autowired } from '../gota-injection';
 import { UserDAO } from '../data-access/UserDAO';
+import { FileWrapper } from '../gota-server';
 
 function timeout(ms:number) {
     return new Promise(resolve => setTimeout(resolve, ms));
@@ -36,5 +37,11 @@ export class UserService{
     @ServiceMapping({requestMethod:RequestMethod.POST, path:'/bye1'})
     bye1(@Body user: User): User{
         return user;
+    }
+
+    @ServiceMapping({path:'/create-template', requestMethod: RequestMethod.POST})
+    createTemplate(@BodyParameter name: String, @BodyParameter description: String, @BodyParameter avatar: FileWrapper): String{
+       console.log('name: '+ name)
+       return "";
     }
 }

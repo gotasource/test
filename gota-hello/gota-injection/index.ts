@@ -55,8 +55,8 @@ export function Config(configKey?:string) {
         let getter = function () {
             let config  = Reflect.getMetadata(DESIGN_META_DATA.CONFIG, target.constructor);
             if(!config){
-				console.log('\n'+`Config "${property}" of ${target.name} has not initiated.`);
-				console.log(`Please check class ${target.name} and config into scanner App.`+'\n');
+				console.log('\n'+`Config "${property}" of ${target.name | target.constructor.name} has not initiated.`);
+				console.log(`Please check class ${target.name | target.constructor.name} and config into scanner App.`+'\n');
 				return undefined;
 			}
 			let value = config[configKey as string];
@@ -103,6 +103,7 @@ export function Autowired(target : any, property : string) {
     let bean = BeanContext.getBean(beanName);
     if(!(bean instanceof type)){
         bean = new type();
+        // set collectionName <- in case of create dao with empty model
         let modelType =  Reflect.getMetadata(DESIGN_META_DATA.MODEL_OF_DAO, type);
         if(modelType){
             bean.collectionName = modelType.name.replace(/[A-Z]/g, (match, offset, string) => {

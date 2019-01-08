@@ -108,7 +108,7 @@ export function DynamicAccess(modes: String | Array<String>){
 
 export function DAO<T extends { new(...args: any[]):  Model }>(entity: T){
     return function(target: Function) {
-        var original = target;
+        //var original = target;
         Reflect.defineMetadata(DESIGN_META_DATA.DAO_OF_MODEL, target, entity);
         Reflect.defineMetadata(DESIGN_META_DATA.MODEL_OF_DAO, entity, target);
         /*
