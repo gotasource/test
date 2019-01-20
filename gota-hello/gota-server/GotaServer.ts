@@ -1,17 +1,17 @@
 import { Server } from "http";
 import  * as http from "http";
 
-import * as fs from "fs";
-import {Helper} from "../gota-core/index";
-import {ServerFilter} from "./ServerFilter";
-import {ServerFilterContainer} from "./ServerFilterContainer";
-import {ServerFilterWrapper} from "./ServerFilterWrapper";
+import {ServerFilter} from "./filter/ServerFilter";
+import {ServerFilterContainer} from "./filter/ServerFilterContainer";
+import {ServerFilterWrapper} from "./filter/ServerFilterWrapper";
 import {FileWrapper} from "./FileWrapper";
-import { BuildRequestBodyFilter } from "./BuildRequestBodyFilter";
-import {BuildRequestQueryFilter} from "./BuildRequestQueryFilter";
-import {BuildArgumentValuesFilter} from "./BuildArgumentValuesFilter";
-const hostname = '127.0.0.1';
-const port = 3000;
+import { BuildRequestBodyFilter } from "./filter-impl/BuildRequestBodyFilter";
+import {BuildRequestQueryFilter} from "./filter-impl/BuildRequestQueryFilter";
+import {BuildArgumentValuesFilter} from "./filter-impl/BuildArgumentValuesFilter";
+import {BuildResponseDataFilter} from "./filter-impl/BuildResponseDataFilter";
+import {RunExecutorFilter} from "./filter-impl/RunExecutorFilter";
+// const hostname = '127.0.0.1';
+// const port = 3000;
 const encode = 'utf8';
 //const Request = http.IncomingMessage;
 //const Response = http.ServerResponse;
@@ -152,17 +152,10 @@ class ExecutorContainer{
 
 export class GotaServer{
     private serverFilterContainer: ServerFilterContainer = new ServerFilterContainer();
+    private userFilters: Array<ServerFilter> = [];
     private executorContainer: ExecutorContainer = new ExecutorContainer();
     private server: Server;
     constructor(){
-        //
-        this.addFilter(new BuildRequestQueryFilter());
-        this.addFilter(new BuildRequestBodyFilter());
-        this.addFilter(new BuildArgumentValuesFilter());
-        //
-        //this.addFilter(new TestFilter());
-        //this.addFilter(new TestFilter2());
-
         this.server = http.createServer((request: any/*#<http.IncomingMessage>*/, response: any/*#<http.ServerResponse>*/) => {
             // console.log('URL:', request.url);
             // console.log('METHOD:', request.method);
@@ -195,60 +188,50 @@ export class GotaServer{
                     response.end('Not Found\n');
                     return;
                 }
-                request.pathParameters = executorInformation.pathParameters;
-                request.serviceExecutor = executorInformation.executor;
-
+                request.executorInformation = executorInformation;
                 await this.serverFilterContainer.executeFilters(request, response);
-
-                try {
-                    let execute = executorInformation.executor.method;
-                    let context =  executorInformation.executor.context;
-                    let argValues = request.argumentValues;
-
-                    let result = await Promise.resolve(execute.apply(context, argValues));
-                    if(result instanceof FileWrapper){
-                        response.setHeader('Content-Type', result.type);
-                        response.setHeader('Content-Disposition', 'attachment; filename='+result.name);
-                        result = result.content;
-                    }
-                    if(typeof result === 'object'){
-                        result = JSON.stringify(result);
-                        response.setHeader('Content-Type', 'application/json');
-                    }else {
-                        result = result.toString();
-                        response.setHeader('Content-Type', 'text/plain');
-                    }
-                    response.statusCode = 200;
-                    response.end(result);
-                }catch (err){
-                    console.log('Error 500: '+ err.message);
-                    console.log('\n'+ err.stack);
-                    response.statusCode = 500;
-                    response.setHeader('Content-Type', 'text/plain');
-                    response.end('Internal Server Error\n');
-                    return;
-                }
+                response.end(response.result);
             });
 
         });
-
     }
 
-    addMapping(path, requestMethod, args, execute, context){
+    public addMapping(path, requestMethod, args, execute, context){
         let executor: Executor = new Executor(context, execute, args);
         this.executorContainer.addMapping(path, requestMethod, executor);
     }
 
-    addFilter(filter: ServerFilter){
-        let serverFilterWrapper: ServerFilterWrapper = new ServerFilterWrapper(filter);
-        this.serverFilterContainer.addFilter(serverFilterWrapper);
+    public addFilters(filters: Array<ServerFilter>){
+        this.userFilters.push(...filters);
     }
 
+    private initFilterContainer(){
+        let filters: Array<ServerFilter> =
+            [ new BuildArgumentValuesFilter()
+                , new BuildRequestBodyFilter()
+                , new BuildRequestQueryFilter()
+                , ... this.userFilters
+                , new RunExecutorFilter()
+                , new BuildResponseDataFilter()];
+        filters.forEach(filter => {
+            let serverFilterWrapper: ServerFilterWrapper = new ServerFilterWrapper(filter);
+            this.serverFilterContainer.add(serverFilterWrapper);
+        });
+    }
+
+
     listen(port, hostname, callback){
-        this.server.listen(port, hostname, callback);
+        this.initFilterContainer();
+
         this.server.on('error', err => {
             console.log('There is a error when server start: '+err.message);
         });
+        // this.server.on('listening',function(){
+        //     console.log('ok, server is running '+ hostname +':'+ port);
+        // });
+
+
+        this.server.listen(port, hostname, callback);
     }
 }
 

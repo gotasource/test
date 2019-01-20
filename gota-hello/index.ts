@@ -5,6 +5,7 @@ import {SiteInfoService} from "./service/SiteInfoService";
 import {MongoConnection} from "./gota-dao/MongoConnection";
 import {ProductService} from "./service/ProductService";
 import {UserService} from "./service/UserService";
+import {ServerFilter} from "./gota-server/filter/ServerFilter";
 
 // @GotaApp({
 //     name: 'Quick Start',
@@ -44,11 +45,27 @@ process.on('unhandledRejection', (...error) => {
     console.log('unhandledRejection',  error[0].message);
 });
 
+class TestRequestFilter1 implements ServerFilter{
+    async doFilter(request: any, response: any, next: Function) {
+        console.log(">>>>>> TestRequestFilter1");
+        await next();
+    }
+}
+
+class TestRequestFilter2 implements ServerFilter{
+    async doFilter(request: any, response: any, next: Function) {
+        console.log(">>>>>> TestRequestFilter2")
+        await next();
+    }
+}
+
+
 @GotaApp({
+    filters:[TestRequestFilter1, TestRequestFilter2],
     scanner: [UserService],
     config: {
         hostName : 'localhost',
-        port: 3002,
+        port: 3000,
         devMode:true,
         database: {
             protocol:'mongodb+srv',
@@ -57,7 +74,7 @@ process.on('unhandledRejection', (...error) => {
             password: 'iC2gjdMkgrjDwF03',
             // options:{},
             databaseName:'gota'
-        },
+        }
 /*
         database: {
             url: 'mongodb+srv://admin:iC2gjdMkgrjDwF03@cluster0-g6wi8.gcp.mongodb.net/test?retryWrites=true',

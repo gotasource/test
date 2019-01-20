@@ -1,6 +1,6 @@
-import {Helper} from "../gota-core/index";
-import {ServerFilter} from "./ServerFilter";
-import {FileWrapper} from "./FileWrapper"
+import {Helper} from "../../gota-core";
+import {ServerFilter} from "../filter/ServerFilter";
+import {FileWrapper} from "../FileWrapper";
 
 const DESIGN_META_DATA = {
      APP : 'design:meta:data:key:app',
@@ -135,7 +135,7 @@ function parseValue(value, type){
 }
 
 function buildArgumentValues(request: any, response: any){
-     let parameterWrappers: Array<ParameterWrapper> =  request.serviceExecutor.arguments;
+     let parameterWrappers: Array<ParameterWrapper> =  request.executorInformation.executor.arguments;
      let argumentValues: Array<any>;
      if(Array.isArray(parameterWrappers)){
           argumentValues = [];
@@ -144,7 +144,7 @@ function buildArgumentValues(request: any, response: any){
                try{
                     switch(parameterWrapper.designMetaData){
                          case DESIGN_META_DATA.PATH_PARAMETER :
-                              value = request.pathParameters[parameterWrapper.name];
+                              value = request.executorInformation.pathParameters[parameterWrapper.name];
                               break;
                          case DESIGN_META_DATA.REQUEST :
                               value = request;
@@ -191,8 +191,8 @@ function buildArgumentValues(request: any, response: any){
                }catch (err){
                     if(err instanceof ParseError){
                          console.log(err.message);
-                         console.log('class: '+ request.serviceExecutor.context ? request.serviceExecutor.context.constructor.name:'');
-                         console.log('method: '+ request.serviceExecutor.method ? request.serviceExecutor.method.name:'');
+                         console.log('class: '+ request.executorInformation.executor.context ? request.serviceExecutor.context.constructor.name:'');
+                         console.log('method: '+ request.executorInformation.executor.method ? request.serviceExecutor.method.name:'');
                          console.log('arg: '+ parameterWrapper.name);
                     }
                     throw err;

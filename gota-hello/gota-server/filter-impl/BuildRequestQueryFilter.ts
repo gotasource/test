@@ -1,5 +1,5 @@
-import {ServerFilter} from "./ServerFilter";
-import {FileWrapper} from "./FileWrapper"
+import {ServerFilter} from "../filter/ServerFilter";
+import {FileWrapper} from "../FileWrapper"
 const encode = 'utf8';
 
 function buildQueryData(request){

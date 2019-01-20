@@ -13,7 +13,9 @@ export class ServerFilterWrapper{
 
     async next(request: any, response: any){
         if(this.nextFilter !== undefined){
-            await this.nextFilter.doFilter(request, response, async ()=>{this.nextFilter.next(request, response)});
+            await this.nextFilter.doFilter(request, response, async ()=>{
+                await this.nextFilter.next(request, response);
+            });
         }
         return;
     }
