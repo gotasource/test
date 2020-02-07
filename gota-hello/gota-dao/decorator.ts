@@ -61,7 +61,7 @@ export class EntityContainer{
     }
 }
 
-export function Entity(properties?: Array<{name:string, type: Function, itemType: Function, dynamicAccessMode?: Array<String>}>){
+export function Entity(properties?: Array<{name:string, type: Function, itemType?: Function, dynamicAccessMode?: Array<String>}>){
 	return function(... args : any[]): void {
         let clazz = args[0];
         properties.forEach(property =>{
