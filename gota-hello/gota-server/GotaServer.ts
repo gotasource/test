@@ -107,9 +107,9 @@ class ExecutorContainer{
     addMapping(path: string, requestMethod: string, executor: Executor){
         this.mapping[path] = this.mapping[path] || {};
         if(!this.mapping[path][requestMethod]){
-            console.log('Apply method "%s" for url: "%s"', requestMethod, path);
+            console.log('Apply   method %s"%s" for url: "%s"', '       '.substring(requestMethod.length), requestMethod, path);
         }else{
-            console.log('Replace method "%s" for url: "%s"', requestMethod, path);
+            console.log('Replace method %s"%s" for url: "%s"', '       '.substring(requestMethod.length), requestMethod, path);
         }
         this.mapping[path][requestMethod] = executor;
     }
@@ -207,9 +207,9 @@ export class GotaServer{
 
     private initFilterContainer(){
         let filters: Array<ServerFilter> =
-            [ new BuildArgumentValuesFilter()
-                , new BuildRequestBodyFilter()
+            [  new BuildRequestBodyFilter(),
                 , new BuildRequestQueryFilter()
+                , new BuildArgumentValuesFilter()
                 , ... this.userFilters
                 , new RunExecutorFilter()
                 , new BuildResponseDataFilter()];

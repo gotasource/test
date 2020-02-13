@@ -67,6 +67,8 @@ export class MongoDataAccess<T extends Model> implements DataAccess<Model> {
         this.cleanNullValue(t);
         let result;
         try{
+            // Type 'Model' is not assignable to type '{ _id?: ObjectId; }'.
+            // @ts-ignore
             result = await collection.insertOne(t, {w:1});
         }catch (err){
             if(err.code = 11000 && err.message.includes(' index: _id_ dup key: {')){//E11000 duplicate key error

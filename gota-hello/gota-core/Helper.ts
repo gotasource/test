@@ -60,7 +60,7 @@ function  getSuper(child: Function): Function{
 
 function findDeclaredProperties(clazz:Function): Array<{name:string, type: Function}>{
     let _clazz = clazz;
-    let properties:  Array<{name:string, type: Function}> = [];
+    let properties:  Array<{name:string, type: Function, itemType?: Function}> = [];
     while (_clazz.name && _clazz.name !== 'Object'){
         let p = (Reflect.getOwnMetadata(DESIGN_META_DATA.ENTITY, _clazz)||[]).filter(item => properties.findIndex( i=> i.name !== item.name));
         properties = [...p, ...properties];
@@ -68,6 +68,21 @@ function findDeclaredProperties(clazz:Function): Array<{name:string, type: Funct
     }
     return properties;
 }
+
+function findDeclaredProperty(clazz:Function, propertyName: String): {name:String, type: Function, itemType?: Function}{
+    let _clazz = clazz;
+    let property:  {name:String, type: Function, itemType?: Function};
+    while (_clazz.name && _clazz.name !== 'Object'){
+        let p: Array<{name:string, type: Function, itemType?: Function}> = (Reflect.getOwnMetadata(DESIGN_META_DATA.ENTITY, _clazz)||[]).filter(item => propertyName === item.name);
+        if(p.length>0){
+            property = p[0];
+            break;
+        }
+        _clazz = Helper.findSuper(_clazz);
+    }
+    return property;
+}
+
 
 function collectSchema(clazz:Function): Array<{name: String, properties: Array<{name:String, type: String}>}>{
     let _clazz: Function = clazz;
@@ -88,21 +103,14 @@ function collectSchema(clazz:Function): Array<{name: String, properties: Array<{
     return schema;
 }
 
-function getTypeProperty(clazz: Function, propertyName: String){
-    let _clazz = clazz;
-    let propertyNameItems = propertyName.split('.');
-    propertyNameItems.forEach(propertyNameItem =>{
-        if(_clazz){
-            let declaredProperties = findDeclaredProperties(_clazz);
-            let declaredProperty = declaredProperties.find(property => property.name === propertyNameItem);
-            if(declaredProperty){
-                _clazz = declaredProperty.type;
-            } else {
-                _clazz = undefined;
-            }
-        }
-    });
-    return _clazz;
+function getTypeProperty(clazz: Function, propertyName: String) {
+    let property:  {name:String, type: Function, itemType?: Function} = findDeclaredProperty(clazz, propertyName);
+    return property ? property.type : undefined;
+}
+
+function getItemTypeProperty(clazz: Function, propertyName: String){
+    let property: {name:String, type: Function, itemType?: Function} = findDeclaredProperty(clazz, propertyName);
+    return property ? property.itemType : undefined;
 }
 
 
@@ -192,8 +200,10 @@ export default class Helper{
     public static getArguments: Function = getArguments;
     public static findSuper: Function = getSuper;
     public static findDeclaredProperties = findDeclaredProperties;
+    public static findDeclaredProperty = findDeclaredProperty;
     public static collectSchema = collectSchema;
     public static getTypeProperty = getTypeProperty;
+    public static getItemTypeProperty = getItemTypeProperty;
     public static isNotEmptyObject = isNotEmptyObject;
     public static separatePrefixSuffixAndPropertyItem = separatePrefixSuffixAndPropertyItem;
     public static unUnitName = unUnitName;

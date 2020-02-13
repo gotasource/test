@@ -91,43 +91,49 @@ const converter = {
      }
 }
 
+function parseArrayValues(arrayValues, itemType){
+     return arrayValues.map(value => parseValue(value, itemType));
+}
+
 function parseValue(value, type){
      let val = value;
      if(type){
-          if(Array.isArray(val)){
-               val = val.map(item =>  parseValue(item, type));
-          }else{
-               if(val && val.constructor !== type){
-                    try{
-                         let parser = converter[val.constructor.name[0].toLowerCase()+val.constructor.name.substring(1) +'To'+type.name];
-                         if(!parser){
-                              //const isClass = v => typeof v === 'function' && /^\s*class\s+/.test(v.toString())
-                              if (typeof type === 'function' && /^\s*class\s+/.test(type.toString())){
-                                   if(typeof val === 'string'){
-                                        val = JSON.parse(val);
-                                   }
-                                   let object = new type();
-                                   //clear auto created properties by constructor
-                                   Object.keys(object).forEach(property => {
-                                        object[property] = undefined;
-                                   });
-
-                                   Object.keys(val).forEach(requestProperty => {
-                                        let classProperty = Helper.separatePrefixSuffixAndPropertyItem(requestProperty).property;
-                                        object[requestProperty] = parseValue(val[requestProperty], Helper.getTypeProperty(type, classProperty));
-                                   })
-                                   val = object;
-                              }else {
-                                   throw new ParseError(val, type);
+          if(val && val.constructor !== type){
+               try{
+                    let parser = converter[val.constructor.name[0].toLowerCase()+val.constructor.name.substring(1) +'To'+type.name];
+                    if(!parser){
+                         //const isClass = v => typeof v === 'function' && /^\s*class\s+/.test(v.toString())
+                         if (typeof type === 'function' && /^\s*class\s+/.test(type.toString())){
+                              if(typeof val === 'string'){
+                                   val = JSON.parse(val);
                               }
-                         }else {
-                              val = parser(val);
-                         }
+                              let object = new type();
+                              //clear auto created properties by constructor
+                              Object.keys(object).forEach(property => {
+                                   object[property] = undefined;
+                              });
 
-                    }catch (err){
-                         console.log(err.message);
-                         throw new ParseError(val, type);
+                              Object.keys(val).forEach(requestProperty => {
+                                   let classProperty = Helper.separatePrefixSuffixAndPropertyItem(requestProperty).property;
+                                   let declaredProperty :{name:String, type: Function, itemType?: Function} = Helper.findDeclaredProperty(type, classProperty);
+                                   if(declaredProperty.type === Array && !! declaredProperty.itemType){
+                                        object[requestProperty] = parseArrayValues(val[requestProperty], declaredProperty.itemType);
+                                   } else {
+                                        object[requestProperty] = parseValue(val[requestProperty], declaredProperty.type);
+                                   }
+
+                              })
+                              val = object;
+                         }else {
+                              throw new ParseError(val, type);
+                         }
+                    }else {
+                         val = parser(val);
                     }
+
+               }catch (err){
+                    console.log(err.message);
+                    throw new ParseError(val, type);
                }
           }
      }
