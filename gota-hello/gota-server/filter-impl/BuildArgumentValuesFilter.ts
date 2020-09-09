@@ -197,8 +197,8 @@ function buildArgumentValues(request: any, response: any){
                }catch (err){
                     if(err instanceof ParseError){
                          console.log(err.message);
-                         console.log('class: '+ request.executorInformation.executor.context ? request.serviceExecutor.context.constructor.name:'');
-                         console.log('method: '+ request.executorInformation.executor.method ? request.serviceExecutor.method.name:'');
+                         console.log('class: '+ !request.executorInformation.executor.context ? '' : request.executorInformation.context.constructor.name);
+                         console.log('method: '+ !request.executorInformation.executor.method ? '' : request.executorInformation.method.name);
                          console.log('arg: '+ parameterWrapper.name);
                     }
                     throw err;

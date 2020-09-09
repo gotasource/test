@@ -2,6 +2,7 @@ import {Entity} from "./decorator";
 @Entity()
 export class Model {
     _id?: String;
+    id?: String;
     constructor(object: any){
         if(!!object && Object.keys(object).length > 0){
             Object.keys(object).forEach(key=>{

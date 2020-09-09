@@ -2,6 +2,7 @@
 //https://rbuckton.github.io/reflect-metadata/#syntax
 import 'reflect-metadata'
 import {Helper} from "../gota-core/index";
+import {Model} from '../gota-dao';
 
 const DESIGN_META_DATA = {
     APP : 'design:meta:data:key:app',
@@ -42,7 +43,10 @@ export class RequestMethod{
     static DELETE = 'DELETE';
 }
 
-export function Service(mapping:{ name?: string, path: string | Array<string>, config?:object}) {
+export function Service(mapping: { name?: string
+                                , path: string | Array<string>
+                                , generate?: Array<new(...args: any[])=> Model>
+                                , config?:object }) {
 	return function(... args : any[]): void {
         // let serviceName = mapping.name;
         // if(!serviceName){
@@ -88,7 +92,7 @@ export function ServiceMapping(mapping:{name?: string, path : string | Array<str
 //https://www.typescriptlang.org/docs/handbook/decorators.html#metadata
 //http://blog.wolksoftware.com/decorators-metadata-reflection-in-typescript-from-novice-to-expert-part-4
 
-function Parameter(designMetaData: string, target: any, methodName: string | symbol, index: number) {
+function Parameter(designMetaData: string, target: any, methodName: string | symbol, index: number, parser?: (object: any) => any) {
     let paramType: any = Reflect.getMetadata("design:typeinfo", target, methodName).paramTypes()[index];
     let method: Function = target[methodName];
     let paramName:string = Helper.getArguments(method)[index];
@@ -102,46 +106,46 @@ function Parameter(designMetaData: string, target: any, methodName: string | sym
     Reflect.defineMetadata(DESIGN_META_DATA.PARAMETER, parameterWrappers, target, methodName);
 }
 
-export function PathParameter(target: Object, name: string | symbol, index: number) {
+export function PathParameter(target: Object, name: string | symbol, index: number, parser?: (object: any) => any) {
     /*
     let indexes: number[] = Reflect.getOwnMetadata(DESIGN_PATH_PARAMETER_STRING, target, name) || [];
     indexes.push(index);
     Reflect.defineMetadata(DESIGN_PATH_PARAMETER_STRING, indexes, target, name);
     */
-    Parameter(DESIGN_META_DATA.PATH_PARAMETER, target, name, index);
+    Parameter(DESIGN_META_DATA.PATH_PARAMETER, target, name, index, parser);
 }
 
-export function Query(target: Object, name: string | symbol, index: number) {
-    Parameter(DESIGN_META_DATA.QUERY, target, name, index);
+export function Query(target: Object, name: string | symbol, index: number, parser?: (object: any) => any) {
+    Parameter(DESIGN_META_DATA.QUERY, target, name, index, parser);
 }
 
-export function QueryParameter(target: any, name: string | symbol, index: number) {
-    Parameter(DESIGN_META_DATA.QUERY_PARAMETER, target, name, index);
+export function QueryParameter(target: any, name: string | symbol, index: number, parser?: (object: any) => any) {
+    Parameter(DESIGN_META_DATA.QUERY_PARAMETER, target, name, index, parser);
 }
 
-export function Body(target: Object, name: string | symbol, index: number) {
-    Parameter(DESIGN_META_DATA.BODY, target, name, index);
+export function Body(target: Object, name: string | symbol, index: number, parser?: (object: any) => any) {
+    Parameter(DESIGN_META_DATA.BODY, target, name, index, parser);
 }
 
-export function BodyParameter(target: Object, name: string | symbol, index: number) {
-    Parameter(DESIGN_META_DATA.BODY_PARAMETER, target, name, index);
+export function BodyParameter(target: Object, name: string | symbol, index: number, parser?: (object: any) => any) {
+    Parameter(DESIGN_META_DATA.BODY_PARAMETER, target, name, index, parser);
 }
 
 
-export function Headers(target: Object, name: string | symbol, index: number) {
-    Parameter(DESIGN_META_DATA.HEADERS, target, name, index);
+export function Headers(target: Object, name: string | symbol, index: number, parser?: (object: any) => any) {
+    Parameter(DESIGN_META_DATA.HEADERS, target, name, index, parser);
 }
 
-export function HeadersParameter(target: Object, name: string | symbol, index: number) {
-    Parameter(DESIGN_META_DATA.HEADERS_PARAMETER, target, name, index);
+export function HeadersParameter(target: Object, name: string | symbol, index: number, parser?: (object: any) => any) {
+    Parameter(DESIGN_META_DATA.HEADERS_PARAMETER, target, name, index, parser);
 }
 
-export function Request(target: Object, name: string | symbol, index: number) {
-    Parameter(DESIGN_META_DATA.REQUEST, target, name, index);
+export function Request(target: Object, name: string | symbol, index: number, parser?: (object: any) => any) {
+    Parameter(DESIGN_META_DATA.REQUEST, target, name, index, parser);
 }
 
-export function Response(target: Object, name: string | symbol, index: number) {
-    Parameter(DESIGN_META_DATA.RESPONSE, target, name, index);
+export function Response(target: Object, name: string | symbol, index: number, parser?: (object: any) => any) {
+    Parameter(DESIGN_META_DATA.RESPONSE, target, name, index, parser);
 }
 
 

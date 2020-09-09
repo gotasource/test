@@ -1,5 +1,5 @@
-import { Server } from "http";
-import  * as http from "http";
+import {IncomingMessage, Server, ServerResponse} from 'http';
+import  * as http from 'http';
 
 import {ServerFilter} from "./filter/ServerFilter";
 import {ServerFilterContainer} from "./filter/ServerFilterContainer";
@@ -87,6 +87,12 @@ class TestFilter2 implements ServerFilter{
     }
 }
 */
+
+interface ExecutorInformation {
+    mappingPath: String,
+    executor: Executor,
+    pathParameters: Object
+}
 class Executor{
     context:any;
     method: Function;
@@ -114,7 +120,7 @@ class ExecutorContainer{
         this.mapping[path][requestMethod] = executor;
     }
 
-    findExecutorInformation(path: string, requestMethod: string): {mappingPath: String, executor: Executor, pathParameters: Object}{
+    findExecutorInformation(path: string, requestMethod: string): ExecutorInformation{
         let pathParameters = {};
         let mapping = this.mapping;
         let mappingPath = Object.keys(mapping).find((mappingPath) => {
@@ -156,7 +162,7 @@ export class GotaServer{
     private executorContainer: ExecutorContainer = new ExecutorContainer();
     private server: Server;
     constructor(){
-        this.server = http.createServer((request: any/*#<http.IncomingMessage>*/, response: any/*#<http.ServerResponse>*/) => {
+        this.server = http.createServer((request: IncomingMessage, response: ServerResponse) => {
             // console.log('URL:', request.url);
             // console.log('METHOD:', request.method);
             // console.log('HEADERS:', request.headers['content-type']);
@@ -168,29 +174,30 @@ export class GotaServer{
             response.setHeader('Access-Control-Allow-Methods', `${REQUEST_METHOD.OPTIONS}, ${REQUEST_METHOD.GET}, ${REQUEST_METHOD.PATCH}`);
             response.setHeader('Access-Control-Allow-Headers', '*');
 
-            request.serverContext = this;
+            (request as any).serverContext = this;
 
             let buffer = Buffer.from('');
             //
             request.on('data', chunk => {
-                buffer= Buffer.concat([buffer,chunk]);
+                // @ts-ignore
+                buffer= Buffer.concat([buffer, chunk]);
             });
             //
             request.on('end', async () => {
                 // console.log('No more data');
-                request.body = buffer;
-                request.path =  request.url.substring(0, request.url.indexOf('?') > -1 ? request.url.indexOf('?') : undefined);
+                (request as any).body = buffer;
+                (request as any).path =  request.url.substring(0, request.url.indexOf('?') > -1 ? request.url.indexOf('?') : undefined);
                 // build pathParameters and find serviceExecutor in executorContainer
-                let executorInformation = this.executorContainer.findExecutorInformation(request.path, request.method);
+                let executorInformation = this.executorContainer.findExecutorInformation( (request as any).path, request.method);
                 if(executorInformation === undefined){
                     response.statusCode = 404;
                     response.setHeader('Content-Type', 'text/plain');
                     response.end('Not Found\n');
                     return;
                 }
-                request.executorInformation = executorInformation;
+                (request as any).executorInformation = executorInformation;
                 await this.serverFilterContainer.executeFilters(request, response);
-                response.end(response.result);
+                response.end( (response as any).result);
             });
 
         });

@@ -39,8 +39,8 @@ export class UserService{
         return user;
     }
 
-    @ServiceMapping({path:'/create-template', requestMethod: RequestMethod.POST})
-    createTemplate(@BodyParameter name: String, @BodyParameter description: String, @BodyParameter avatar: FileWrapper): String{
+    @ServiceMapping({path:'/create-template/', requestMethod: RequestMethod.POST})
+    createTemplate(@BodyParameter name: String, @BodyParameter description: String, @BodyParameter avatar: FileWrapper): string{
        console.log('name: '+ name)
        return "";
     }

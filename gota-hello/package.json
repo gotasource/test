@@ -6,6 +6,7 @@
   "scripts": {
     "build": "gtc",
     "start": "node dist/index.js",
+    "watch": "gtc:watch",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -13,13 +14,13 @@
   "license": "ISC",
   "dependencies": {
     "http": "0.0.0",
-    "mongodb": "^3.1.0",
+    "mongodb": "^3.5.7",
     "reflect-metadata": "^0.1.12",
     "url": "^0.11.0"
   },
   "devDependencies": {
-    "typescript": "^2.7.2",
-    "@types/node": "^9.4.6",
-    "@types/mongodb": "^3.1.2"
+    "@types/mongodb": "^3.1.2",
+    "@types/node": "^9.6.55",
+    "typescript": "^2.7.2"
   }
 }

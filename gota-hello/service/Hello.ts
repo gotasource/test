@@ -35,4 +35,9 @@ export class Hello{
     async readCategory1(@QueryParameter lastName:string, @QueryParameter firstName:string):Promise<User>{
         return await sleep(this, this.readCategory, [lastName, firstName]);
     }
+    @ServiceMapping({requestMethod:[RequestMethod.GET,RequestMethod.PUT], path: '/bye'})
+    async readCategoryww(@QueryParameter lastName:string, @QueryParameter firstName:string):Promise<Array<User>>{
+        return await sleep(this, this.readCategory, [lastName, firstName]);
+    }
+
 }

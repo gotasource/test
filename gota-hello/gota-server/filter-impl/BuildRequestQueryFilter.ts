@@ -1,5 +1,6 @@
 import {ServerFilter} from "../filter/ServerFilter";
 import {FileWrapper} from "../FileWrapper"
+import {Helper} from '../../gota-core';
 const encode = 'utf8';
 
 function buildQueryData(request){
@@ -14,10 +15,11 @@ function buildQueryData(request){
                value = decodeURIComponent(value);
                if(name.endsWith('[]')){
                     name = name.substring(0, name.length - '[]'.length);
-                    query[name] =  query[name] || [];
-                    query[name].push(value);
+                    let array =  Helper.getDeeplyProperty(query, name) || [];
+                    array.push(value);
+                    Helper.setOrAddDeeplyProperty(query, name, array);
                }else{
-                    query[name] = value;
+                    Helper.setOrAddDeeplyProperty(query, name, value);
                }
           });
           request.query = query

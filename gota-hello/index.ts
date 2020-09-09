@@ -42,7 +42,7 @@ import {ServerFilter} from "./gota-server/filter/ServerFilter";
 
 process.on('unhandledRejection', (...error) => {
     // Will print "unhandledRejection err is not defined"
-    console.log('unhandledRejection',  error[0].message);
+    console.log('unhandledRejection',  error);
 });
 
 class TestRequestFilter1 implements ServerFilter{

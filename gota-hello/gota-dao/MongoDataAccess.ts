@@ -58,7 +58,7 @@ export class MongoDataAccess<T extends Model> implements DataAccess<Model> {
      * @param t  document
      * @returns  id of the created document.
      */
-    async create(t: T): Promise<string>{
+    async create(t: T): Promise<T>{
         // if(!t._id){
         //     t._id= (new ObjectId()).toString();
         // }
@@ -86,7 +86,7 @@ export class MongoDataAccess<T extends Model> implements DataAccess<Model> {
 
         }
         //console.log('Creating is Success: %s', JSON.stringify(result.result, null, 4));
-        return result.insertedId ;
+        return {_id: result.insertedId} as T;
     };
 
     /**

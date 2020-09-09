@@ -2,6 +2,7 @@ import "reflect-metadata";
 import Booter from "./Booter";
 import {GotaServer} from "../gota-server";
 import {ServerFilter} from "../gota-server/filter/ServerFilter";
+import {Helper} from '../gota-core';
 
 const DESIGN_META_DATA = {
     APP : 'design:meta:data:key:app',
@@ -33,6 +34,8 @@ const REQUEST_METHOD = {
     DELETE : 'DELETE'
 };
 
+const executedPostInit =[];
+
 export function GotaApp(obj: {name?: string,
     scanner:Array<Function>,
     config:object,
@@ -42,7 +45,7 @@ export function GotaApp(obj: {name?: string,
 }
 
 
-function initApp(){
+function initApp(): GotaServer{
     let app = new GotaServer();
     return app;
 }
@@ -53,7 +56,12 @@ function initConfig(classes: Array<any>, config: object): Array<any>{
         let metaData = Reflect.getMetadata(DESIGN_META_DATA.SERVICE, serviceClass);
         let newConfig = Object.assign({},config, metaData? metaData.config: undefined);
         Reflect.defineMetadata(DESIGN_META_DATA.CONFIG, newConfig, serviceClass);
-
+        //
+        let _super = Helper.findSuper(serviceClass);
+        if(_super){
+            initConfig([_super], newConfig);
+        }
+        //
         let target = new serviceClass();
         // init config for properties child class
         let autowiredProperties:  Array<string> = Reflect.getMetadata(DESIGN_META_DATA.AUTOWIRED, target);
@@ -89,8 +97,12 @@ async function executePostInit (serviceTargets : any){
             let property = autowiredProperties[i];
             await executePostInit(serviceTarget[property]);
         }
-        let postInitMethods: Array<Object> = Reflect.getMetadata(DESIGN_META_DATA.POST_INIT, serviceTarget) || [];
-        await executeMethod(serviceTarget, postInitMethods as string[]);
+        if(!executedPostInit.includes(serviceTarget)){
+            let postInitMethods: Array<Object> = Reflect.getMetadata(DESIGN_META_DATA.POST_INIT, serviceTarget) || [];
+            await executeMethod(serviceTarget, postInitMethods as string[]);
+            executedPostInit.push(serviceTarget);
+        };
+
     }
 
 }
@@ -104,7 +116,7 @@ export async function GotaBoot(appClass: Function) {
     if(!serviceClasses){
         throw new Error('Please make sure "scanner" in "@GotaApp" Metadata of "'+appClass.name+'" is not empty.');
     }
-    let app = initApp();
+    const app: GotaServer = initApp();
     if(filterClasses){
         app.addFilters(filterClasses.map(filterClass => new filterClass()));
     }

@@ -13,8 +13,8 @@ async function runExecutor(request, response){
           response.result = result;
      }catch (err){
           console.log('Run Executor error: '+ err.message);
-          console.log('class: '+ request.executorInformation.executor.context ? request.serviceExecutor.context.constructor.name:'');
-          console.log('method: '+ request.executorInformation.executor.method ? request.serviceExecutor.method.name:'');
+          console.log('class: '+ !request.executorInformation.executor.context ? '' : request.executorInformation.context.constructor.name);
+          console.log('method: '+ !request.executorInformation.executor.method ? '' : request.executorInformation.method.name);
           // console.log('\n'+ err.stack);
           console.trace(err);
           console.log('\n');
