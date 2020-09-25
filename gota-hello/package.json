@@ -4,9 +4,10 @@
   "description": "",
   "main": "dist/index.js",
   "scripts": {
-    "build": "gtc",
+    "build": "gtserver",
     "start": "node dist/index.js",
     "watch": "gtc:watch",
+    "start-trace": "node -r source-map-support/register --inspect dist/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -21,6 +22,7 @@
   "devDependencies": {
     "@types/mongodb": "^3.1.2",
     "@types/node": "^9.6.55",
+    "source-map-support": "^0.5.19",
     "typescript": "^2.7.2"
   }
 }

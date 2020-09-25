@@ -8,15 +8,5 @@ export class FileWrapper{
         this.type = contentType;
         this.content =content;
     }
-    saveFile(path:string):void{
-        fs.writeFile(path + (path.endsWith('/') ? '': '/') + this.name, this.content, "binary", function (err) {
-            if (err) {
-                //console.log(err);
-                throw err;
-            } else {
-                //console.log("the file was saved!");
-            }
-        });
-    }
 
 }

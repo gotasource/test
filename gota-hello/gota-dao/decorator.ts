@@ -4,6 +4,7 @@ import 'reflect-metadata'
 import { Helper } from "../gota-core/index";
 import { Model } from './Model';
 import { DataAccess } from './interface/DataAccess';
+import { beanContext } from '../gota-injection';
 
 const DESIGN_META_DATA = {
     APP : 'design:meta:data:key:app',
@@ -107,10 +108,13 @@ export function DynamicAccess(modes: String | Array<String>){
 }
 
 export function DAO<T extends { new(...args: any[]):  Model }>(entity: T){
-    return function(target: Function) {
+    return (target: new(...args: any[])=>  DataAccess<any>) => {
         //var original = target;
         Reflect.defineMetadata(DESIGN_META_DATA.DAO_OF_MODEL, target, entity);
         Reflect.defineMetadata(DESIGN_META_DATA.MODEL_OF_DAO, entity, target);
+
+        const daoInstance = new target(entity);
+        beanContext.setBean(target.name, daoInstance);
         /*
         // the new constructor behaviour
         var CustomType : any = function (...args) {

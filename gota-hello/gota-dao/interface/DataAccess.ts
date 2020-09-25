@@ -5,21 +5,6 @@ import {Model} from '../Model';
 export interface DataAccess<T extends Model> {
 
     /**
-     * Create a document
-     * @param the document will be created
-     * @returns  document is included new properties
-     */
-    create(object: T): Promise<T>;
-
-    /**
-     * Create Many documents
-     * @param  array documents will be created
-     * @returns  documents are included new properties
-     */
-    createMany(array: Array<T>): Promise<Array<T>>;
-
-
-    /**
      * Add a child document to root document
      * @param  parentId  id of root document
      * @param  childProperty
@@ -59,6 +44,12 @@ export interface DataAccess<T extends Model> {
      */
     delete(id: string): Promise<boolean>;
 
+    /**
+     * Create Many documents
+     * @param  array documents will be created
+     * @returns  documents are included new properties
+     */
+    createMany(array: Array<T>): Promise<Array<T>>;
 
     /**
      * Search documents

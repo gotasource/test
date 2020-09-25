@@ -1,8 +1,8 @@
 import {Entity} from "./decorator";
 @Entity()
 export class Model {
-    _id?: String;
-    id?: String;
+    _id?: String | Number;
+    id?: String | Number;
     constructor(object: any){
         if(!!object && Object.keys(object).length > 0){
             Object.keys(object).forEach(key=>{

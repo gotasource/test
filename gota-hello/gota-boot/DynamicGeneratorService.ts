@@ -1,5 +1,5 @@
 import {Helper} from '../gota-core';
-import {BeanContext} from '../gota-injection';
+import {beanContext} from '../gota-injection';
 import {Model} from '../gota-dao';
 import {DataAccess} from '../gota-dao/interface/DataAccess';
 
@@ -31,7 +31,7 @@ export class DynamicGeneratorService {
 
     constructor(model: new(...args: any[]) => Model) {
         let daoType = Reflect.getMetadata(DESIGN_META_DATA.DAO_OF_MODEL, model);
-        this.dao = BeanContext.getBean(daoType.name);
+        this.dao = beanContext.getBean(daoType.name);
     }
 
     public async search(query) {

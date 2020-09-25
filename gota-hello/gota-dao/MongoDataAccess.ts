@@ -323,7 +323,7 @@ export class MongoDataAccess<T extends Model> implements DataAccess<Model> {
      * @param  array documents will be created
      * @returns  ids of created documents
      */
-    async createMany(array: Array<T>): Promise<Array<string>>{
+    async createMany(array: Array<T>): Promise<Array<T>>{
         let collection = this.collection;
         console.log('Creating Many "%s"', collection.collectionName);
         array.forEach(t=>{
@@ -336,7 +336,7 @@ export class MongoDataAccess<T extends Model> implements DataAccess<Model> {
             console.log('Creating Many is Fail: %s', JSON.stringify(err, null, 4));
             throw err;
         }
-        return result.insertedIds;
+        return result.insertedIds.map(_id => new Object(({_id, id: _id}) as T));
     };
 
     /**

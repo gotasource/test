@@ -1,9 +1,9 @@
-import "reflect-metadata";
+import 'reflect-metadata';
 import {Helper} from "../gota-core/index";
 import {DynamicAccessMode, EntityContainer, Model} from '../gota-dao/index';
 import {RequestMethod} from "../gota-service/index";
-import { BeanContext } from "../gota-injection";
-import {GotaServer} from '../gota-server';
+import { beanContext } from "../gota-injection";
+import {GotaServer, ServiceFilter} from '../gota-server';
 
 const DESIGN_META_DATA = {
     APP : 'design:meta:data:key:app',
@@ -55,6 +55,7 @@ interface FunctionWrapper{
 interface ServiceWrapper{
     service: any;
     path: string | Array<string>;
+    filter?:Array<ServiceFilter>
     functionWrappers: Array<FunctionWrapper>;
 }
 
@@ -65,6 +66,7 @@ interface ServiceInformation{
     awaitedType?: any;
     requestInformation: Array<ParameterWrapper>;
     service: Object;
+    filter?:Array<ServiceFilter>
     function: Function;
 }
 
@@ -76,7 +78,8 @@ export default class Booter {
         let serviceWrapper: ServiceWrapper = {
             service: service,
             path: serviceMetaData.path,
-            functionWrappers: functionWrappers
+            functionWrappers: functionWrappers,
+            filter: serviceMetaData.filter
         };
         return serviceWrapper;
     }
@@ -201,7 +204,8 @@ export default class Booter {
                             function: functionWrapper.function,
                             returnType: functionWrapper.returnType,
                             awaitedType: functionWrapper.awaitedType,
-                            requestInformation: functionWrapper.parameterWrappers
+                            requestInformation: functionWrapper.parameterWrappers,
+                            filter: serviceWrapper.filter
                         }
                         serviceInformationList.push(serviceInformation)
                     })
@@ -217,7 +221,8 @@ export default class Booter {
         let requestMethod: string = serviceInformation.requestMethod ;
         let _function = serviceInformation.function;
         let service = serviceInformation.service;
-        app.addMapping(path, requestMethod, serviceInformation.requestInformation, _function, service)
+        app.addFilters(serviceInformation.filter || []);
+        app.addMapping(path, requestMethod, serviceInformation.requestInformation, _function, service);
     }
 
     private static bootCollectionService(server: GotaServer, collectionService: Array<ServiceInformation>):void{
@@ -417,7 +422,7 @@ export default class Booter {
     /////////////
     private static collectAModelServiceInformation(servicePath, model: new(...args: any[])=> Model): Array<ServiceInformation> {
         let daoType = Reflect.getMetadata(DESIGN_META_DATA.DAO_OF_MODEL, model);
-        let dao = BeanContext.getBean(daoType.name);
+        let dao = beanContext.getBean(daoType.name);
         let modelPath = model.name.replace(/[A-Z]/g, (match, offset, string)=> {
             return (offset ? '-' : '') + match.toLowerCase();
         });

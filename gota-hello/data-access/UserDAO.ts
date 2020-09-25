@@ -5,6 +5,6 @@ import { User } from "../models/User";
 @DAO(User)
 export class UserDAO extends MongoDataAccess<User> {
     constructor() {
-        super();
+        super(User);
     }
 }

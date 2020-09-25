@@ -33,14 +33,16 @@ const REQUEST_METHOD = {
 };
 
 class BeanContext {
-    private static beans:object = {}
-    public static  setBean(name: string, value: any):void{
+    private beans:object = {}
+    public setBean(name: string, value: any):void{
         this.beans[name] = value;
     }
-    public static getBean(name:string): any{
+    public getBean(name:string): any{
         return this.beans[name];
     }
 }
+
+const beanContext = new BeanContext();
 
 export function Config(configKey?:string) {
     return function(target: any, property: string): void {
@@ -100,7 +102,7 @@ export function Autowired(target : any, property : string) {
     let type: any = Reflect.getMetadata("design:typeinfo", target, property).type();
     let beanName = type.name;// ('CustomType' !== type.name)? type.name : type.originalType.name
 
-    let bean = BeanContext.getBean(beanName);
+    let bean = beanContext.getBean(beanName);
     if(!(bean instanceof type)){
         bean = new type();
         // set collectionName <- in case of create dao with empty model
@@ -109,8 +111,10 @@ export function Autowired(target : any, property : string) {
             bean.collectionName = modelType.name.replace(/[A-Z]/g, (match, offset, string) => {
                 return (offset ? '_' : '') + match.toLowerCase();
             });
+	    // TODO verify next line
+    	    bean.clazz = modelType;
         }
-        BeanContext.setBean(beanName, bean);
+        beanContext.setBean(beanName, bean);
     }
 
     let getter = function () {
@@ -134,4 +138,4 @@ export function Autowired(target : any, property : string) {
     }
 }
 
-export { BeanContext }
+export { beanContext }

@@ -1,7 +1,6 @@
 import "reflect-metadata";
 import Booter from "./Booter";
-import {GotaServer} from "../gota-server";
-import {ServerFilter} from "../gota-server/filter/ServerFilter";
+import {GotaServer, ServerFilter, ApplicationFilter} from "../gota-server";
 import {Helper} from '../gota-core';
 
 const DESIGN_META_DATA = {
@@ -39,7 +38,7 @@ const executedPostInit =[];
 export function GotaApp(obj: {name?: string,
     scanner:Array<Function>,
     config:object,
-    filters?: Array<new() => ServerFilter>
+    filters?: Array<new() => ApplicationFilter>
 }) {
     return Reflect.metadata(DESIGN_META_DATA.APP, obj);
 }
@@ -101,8 +100,7 @@ async function executePostInit (serviceTargets : any){
             let postInitMethods: Array<Object> = Reflect.getMetadata(DESIGN_META_DATA.POST_INIT, serviceTarget) || [];
             await executeMethod(serviceTarget, postInitMethods as string[]);
             executedPostInit.push(serviceTarget);
-        };
-
+        }
     }
 
 }

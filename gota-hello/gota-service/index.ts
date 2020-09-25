@@ -3,6 +3,7 @@
 import 'reflect-metadata'
 import {Helper} from "../gota-core/index";
 import {Model} from '../gota-dao';
+import {ServiceFilter} from "../gota-server";
 
 const DESIGN_META_DATA = {
     APP : 'design:meta:data:key:app',
@@ -43,10 +44,13 @@ export class RequestMethod{
     static DELETE = 'DELETE';
 }
 
-export function Service(mapping: { name?: string
-                                , path: string | Array<string>
-                                , generate?: Array<new(...args: any[])=> Model>
-                                , config?:object }) {
+export function Service(mapping: {
+    name?: string
+    , path: string | Array<string>
+    , generate?: Array<new(...args: any[])=> Model>
+    , config?:object
+    , filters?: Array<new() => ServiceFilter>
+}) {
 	return function(... args : any[]): void {
         // let serviceName = mapping.name;
         // if(!serviceName){

@@ -4,17 +4,19 @@ const encode = 'utf8';
 
 function buildResponseData(response){
      let result = response.result;
-     if(result instanceof FileWrapper){
-          response.setHeader('Content-Type', result.type);
-          response.setHeader('Content-Disposition', 'attachment; filename='+result.name);
-          result = result.content;
-     }
-     if(typeof result === 'object'){
-          result = JSON.stringify(result);
-          response.setHeader('Content-Type', 'application/json');
-     }else {
-          result = result.toString();
-          response.setHeader('Content-Type', 'text/plain');
+
+     if(!!result){
+          if(result instanceof FileWrapper){
+               response.setHeader('Content-Type', result.type);
+               response.setHeader('Content-Disposition', 'attachment; filename='+result.name);
+               result = result.content;
+          }else if(typeof result === 'object'){
+               result = JSON.stringify(result);
+               response.setHeader('Content-Type', 'application/json');
+          }else {
+               result = result.toString();
+               response.setHeader('Content-Type', 'text/plain');
+          }
      }
 
      response.result = result;
