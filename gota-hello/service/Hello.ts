@@ -1,6 +1,7 @@
 
 import {QueryParameter, RequestMethod, Service, ServiceMapping} from '../gota-service';
 import {ApplicationFilter, ServerFilter, ServiceFilter} from "../gota-server";
+import {ServiceFilterTest1} from "./filters/filter";
 
 function timeout(ms:number) {
     return new Promise(resolve => setTimeout(resolve, ms));
@@ -11,12 +12,7 @@ async function sleep(contex:any, fn:Function, args:Array<string>) {
 }
 
 
-class ServiceFilterTest implements ServiceFilter{
-    async doFilter(request: any, response: any, next: Function) {
-        console.log(">>>>>> TestRequestFilter2")
-        await next();
-    }
-}
+
 
 export class User{
 
@@ -29,7 +25,7 @@ export class User{
 
 }
 
-@Service({path:'/hello', filters: [ServiceFilterTest]})
+@Service({path:'/hello', filters: [ServiceFilterTest1]})
 export class Hello{
 
     constructor(){

@@ -63,7 +63,7 @@ class TestRequestFilter2 implements ApplicationFilter{
 
 
 @GotaApp({
-    filters:[TestRequestFilter1, TestRequestFilter2],
+    // filters:[TestRequestFilter1, TestRequestFilter2],
     scanner: [UserService, Hello],
     config: {
         hostName : 'localhost',

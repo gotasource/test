@@ -4,6 +4,7 @@ import {DynamicAccessMode, EntityContainer, Model} from '../gota-dao/index';
 import {RequestMethod} from "../gota-service/index";
 import { beanContext } from "../gota-injection";
 import {GotaServer, ServiceFilter} from '../gota-server';
+import {isArray} from "util";
 
 const DESIGN_META_DATA = {
     APP : 'design:meta:data:key:app',
@@ -55,7 +56,7 @@ interface FunctionWrapper{
 interface ServiceWrapper{
     service: any;
     path: string | Array<string>;
-    filter?:Array<ServiceFilter>
+    // filters?:Array< new() => ServiceFilter>
     functionWrappers: Array<FunctionWrapper>;
 }
 
@@ -66,7 +67,7 @@ interface ServiceInformation{
     awaitedType?: any;
     requestInformation: Array<ParameterWrapper>;
     service: Object;
-    filter?:Array<ServiceFilter>
+    // filters?:Array< new() => ServiceFilter>
     function: Function;
 }
 
@@ -79,7 +80,7 @@ export default class Booter {
             service: service,
             path: serviceMetaData.path,
             functionWrappers: functionWrappers,
-            filter: serviceMetaData.filter
+            // filters: serviceMetaData.filters
         };
         return serviceWrapper;
     }
@@ -205,7 +206,7 @@ export default class Booter {
                             returnType: functionWrapper.returnType,
                             awaitedType: functionWrapper.awaitedType,
                             requestInformation: functionWrapper.parameterWrappers,
-                            filter: serviceWrapper.filter
+                            // filters: serviceWrapper.filters
                         }
                         serviceInformationList.push(serviceInformation)
                     })
@@ -221,7 +222,15 @@ export default class Booter {
         let requestMethod: string = serviceInformation.requestMethod ;
         let _function = serviceInformation.function;
         let service = serviceInformation.service;
-        app.addFilters(serviceInformation.filter || []);
+        // if(isArray(serviceInformation.filters) && serviceInformation.filters.length){
+        //     const filters = serviceInformation.filters.map(filterClass => {
+        //         const filter =  new filterClass();
+        //         filter['path'] = path;
+        //         return filter;
+        //     });
+        //     app.addFilters(filters);
+        // }
+
         app.addMapping(path, requestMethod, serviceInformation.requestInformation, _function, service);
     }
 

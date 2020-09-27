@@ -196,12 +196,26 @@ export class GotaServer{
                     return;
                 }
                 (request as any).executorInformation = executorInformation;
-                await this.serverFilterContainer.executeFilters(request, response);
-                if(!!(response as any).result){
-                    response.end((response as any).result);
-                }else {
-                    response.end('');
+                try {
+                    await this.serverFilterContainer.executeFilters(request, response);
+                    if(!!(response as any).result){
+                        response.end((response as any).result);
+                    }else {
+                        response.end('');
+                    }
+                }catch (err) {
+                    console.trace(err);
+                    console.log('\n');
+                    try {
+                        response.statusCode = 500;
+                        response.setHeader('Content-Type', 'text/plain');
+                        response.end('Internal Server Error\n');
+                    }catch (e) {
+
+                    }
+
                 }
+
 
             });
 

@@ -4,6 +4,8 @@ import {Model} from '../Model';
 
 export interface DataAccess<T extends Model> {
 
+
+    create(t: T): Promise<T>;
     /**
      * Add a child document to root document
      * @param  parentId  id of root document

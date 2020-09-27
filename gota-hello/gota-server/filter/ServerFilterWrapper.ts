@@ -8,8 +8,10 @@ export class ServerFilterWrapper{
     }
 
     async doFilter(request: any, response: any, next: Function){
-        if(!this.filter['path'] || isMapped(request.url, this.filter['path'])){
+        if(!this.filter['paths'] || isMapped(request.url, this.filter['paths'])){
             await Promise.resolve(this.filter.doFilter(request, response, next));
+        } else {
+            await next(request, response);
         }
 
     }
@@ -25,30 +27,36 @@ export class ServerFilterWrapper{
 
 }
 
-const isMapped = (path: string, mappingPath: string) => {
-    if(path.indexOf('?')>0){
-        path = path.substring(0, path.indexOf('?'))
-    }
+const isMapped = (path: string, mappingPath: string | Array<string>) => {
 
-    const pathItems = path.split('/');
-    if(pathItems[0]===''){
-        pathItems.shift();
-    }
-    const mappingPathItems = mappingPath.split('/');
-    if(mappingPathItems[0]===''){
-        mappingPathItems.shift();
-    }
-    if(pathItems.length >= mappingPathItems.length){
-        for (let index in mappingPathItems){
-            if(mappingPathItems[index].startsWith(':')){
-                continue
-            } else if(mappingPathItems[index] !== pathItems[index]){
-                return false;
-            }
-
-        }
-        return true;
+    if(Array.isArray(mappingPath)){
+        const result = mappingPath.find(map => isMapped(path, map.toString()));
+        return !! result;
     }else {
-        return false;
+        if(path.indexOf('?')>0){
+            path = path.substring(0, path.indexOf('?'))
+        }
+
+        const pathItems = path.split('/');
+        if(pathItems[0]===''){
+            pathItems.shift();
+        }
+        const mappingPathItems = mappingPath.split('/');
+        if(mappingPathItems[0]===''){
+            mappingPathItems.shift();
+        }
+        if(pathItems.length >= mappingPathItems.length){
+            for (let index in mappingPathItems){
+                if(mappingPathItems[index].startsWith(':')){
+                    continue
+                } else if(mappingPathItems[index] !== pathItems[index]){
+                    return false;
+                }
+
+            }
+            return true;
+        }else {
+            return false;
+        }
     }
 }

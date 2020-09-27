@@ -6,6 +6,7 @@ import {BodyParameter, Body} from "../gota-service/index";
 import { Autowired } from '../gota-injection';
 import { UserDAO } from '../data-access/UserDAO';
 import { FileWrapper } from '../gota-server';
+import {ServiceFilterTest1, ServiceFilterTest2} from "./filters/filter";
 
 function timeout(ms:number) {
     return new Promise(resolve => setTimeout(resolve, ms));
@@ -15,7 +16,7 @@ async function sleep(fn:Function, args:Array<string>) {
     return fn(...args);
 }
 
-@Service({path:'/user-service'})
+@Service({path:'/user-service', filters: [ServiceFilterTest1, ServiceFilterTest2]})
 export class UserService{
     @Autowired
     private userDAO: UserDAO;
